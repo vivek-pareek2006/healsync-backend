@@ -9,7 +9,7 @@ public class PatientDto {
     private String patientName;
     private Integer patientAge;
     private String gender;
-    private Integer mobileNo;
+    private String mobileNo;
     private String email;
     private List<Integer> treatmentPlanIds;
 }

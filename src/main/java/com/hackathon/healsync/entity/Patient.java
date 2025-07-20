@@ -24,7 +24,7 @@ public class Patient {
     private String patientName;
     private Integer patientAge;
     private String gender;
-    private Integer mobileNo;
+    private String mobileNo;
     private String email;
 
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

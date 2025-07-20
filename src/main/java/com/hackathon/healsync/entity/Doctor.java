@@ -21,7 +21,7 @@ public class Doctor {
     private String name;
     private String speaciality;
     private String email;
-    private Integer mobileNo;
+    private String mobileNo;
     @Column(columnDefinition = "TEXT")
     private String bio;
     private String shift;
