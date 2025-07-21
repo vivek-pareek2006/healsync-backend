@@ -11,5 +11,6 @@ public class PatientDto {
     private String gender;
     private String mobileNo;
     private String email;
+    private String password;
     private List<Integer> treatmentPlanIds;
 }

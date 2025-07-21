@@ -2,6 +2,8 @@ package com.hackathon.healsync.mapper;
 
 import com.hackathon.healsync.entity.Patient;
 import com.hackathon.healsync.dto.PatientDto;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
 import java.util.stream.Collectors;
 
 public class PatientMapper {
@@ -13,6 +15,7 @@ public class PatientMapper {
         dto.setGender(entity.getGender());
         dto.setMobileNo(entity.getMobileNo());
         dto.setEmail(entity.getEmail());
+        dto.setPassword(null); // Do not expose password in DTO
         if (entity.getTreatmentPlans() != null) {
             dto.setTreatmentPlanIds(entity.getTreatmentPlans().stream().map(tp -> tp.getTreatmentId()).collect(Collectors.toList()));
         }
@@ -27,6 +30,10 @@ public class PatientMapper {
         entity.setGender(dto.getGender());
         entity.setMobileNo(dto.getMobileNo());
         entity.setEmail(dto.getEmail());
+        // Encrypt password before saving
+        if (dto.getPassword() != null) {
+            entity.setPassword(new BCryptPasswordEncoder().encode(dto.getPassword()));
+        }
         // TreatmentPlans mapping can be handled separately if needed
         return entity;
     }
