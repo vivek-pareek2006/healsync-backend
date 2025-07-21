@@ -11,4 +11,5 @@ public class DoctorDto {
     private String mobileNo;
     private String bio;
     private String shift;
+    private String password;
 }

@@ -13,6 +13,7 @@ public class DoctorMapper {
         dto.setMobileNo(entity.getMobileNo());
         dto.setBio(entity.getBio());
         dto.setShift(entity.getShift());
+        dto.setPassword(entity.getPassword());
         return dto;
     }
 
@@ -25,6 +26,7 @@ public class DoctorMapper {
         entity.setMobileNo(dto.getMobileNo());
         entity.setBio(dto.getBio());
         entity.setShift(dto.getShift());
+        entity.setPassword(dto.getPassword());
         return entity;
     }
 }

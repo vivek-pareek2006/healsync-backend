@@ -25,4 +25,5 @@ public class Doctor {
     @Column(columnDefinition = "TEXT")
     private String bio;
     private String shift;
+    private String password;
 }
