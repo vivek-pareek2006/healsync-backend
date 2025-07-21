@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.hackathon.healsync.dto.AppointmentResponseDto;
 import com.hackathon.healsync.service.AppointmentService;
 
 @RestController
@@ -21,10 +23,10 @@ public class AppointmentController {
     }
 
     @PostMapping("/appointment")
-    public ResponseEntity<String> bookAppointment(@RequestParam("speciality") String speciality,
-                                                  @RequestParam("startDateTime") String startDateTime,
-                                                  @RequestParam("endDateTime") String endDateTime,
-                                                  @RequestParam("patientId") Integer patientId) {
+    public ResponseEntity<?> bookAppointment(@RequestParam("speciality") String speciality,
+                                             @RequestParam("startDateTime") String startDateTime,
+                                             @RequestParam("endDateTime") String endDateTime,
+                                             @RequestParam("patientId") Integer patientId) {
         LocalDateTime start;
         LocalDateTime end;
         try {
@@ -34,7 +36,10 @@ public class AppointmentController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid dateTime format. Use ISO format.");
         }
 
-        String result = appointmentService.bookAppointment(patientId, speciality, start, end);
+        AppointmentResponseDto result = appointmentService.bookAppointment(patientId, speciality, start, end);
+        if (result == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No doctor available for the given speciality and time range.");
+        }
         return ResponseEntity.ok(result);
     }
 }
