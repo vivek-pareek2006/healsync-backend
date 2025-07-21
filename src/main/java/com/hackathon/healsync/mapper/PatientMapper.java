@@ -1,10 +1,11 @@
 package com.hackathon.healsync.mapper;
 
-import com.hackathon.healsync.entity.Patient;
-import com.hackathon.healsync.dto.PatientDto;
+import java.util.stream.Collectors;
+
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-import java.util.stream.Collectors;
+import com.hackathon.healsync.dto.PatientDto;
+import com.hackathon.healsync.entity.Patient;
 
 public class PatientMapper {
     public static PatientDto toDto(Patient entity) {
