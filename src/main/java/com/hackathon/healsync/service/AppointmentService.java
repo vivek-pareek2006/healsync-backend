@@ -3,11 +3,13 @@ package com.hackathon.healsync.service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.hackathon.healsync.util.DoctorShift;
+import org.springframework.stereotype.Service;
+
 import com.hackathon.healsync.entity.AppointmentStatus;
 import com.hackathon.healsync.entity.Doctor;
 import com.hackathon.healsync.repository.AppointmentStatusRepository;
 import com.hackathon.healsync.repository.DoctorRepository;
-import org.springframework.stereotype.Service;
 
 @Service
 public class AppointmentService {
@@ -21,7 +23,8 @@ public class AppointmentService {
     }
 
     public Integer findAvailableDoctorId(String speciality, LocalDateTime startDateTime, LocalDateTime endDateTime) {
-        List<Doctor> doctors = doctorRepository.findBySpeaciality(speciality);
+        DoctorShift requiredShift = DoctorShift.fromTimeRange(startDateTime, endDateTime);
+        List<Doctor> doctors = doctorRepository.findBySpeacialityAndShift(speciality, requiredShift.name());
         for (var doctor : doctors) {
             var conflicts = appointmentStatusRepository.findConflictingAppointments(doctor.getDoctorId(), startDateTime, endDateTime);
             if (conflicts == null || conflicts.isEmpty()) {

@@ -1,18 +1,34 @@
 package com.hackathon.healsync.controller;
 
 import org.springframework.http.ResponseEntity;
+
+import com.hackathon.healsync.dto.DiseaseDto;
+import com.hackathon.healsync.service.DiseaseService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.hackathon.healsync.dto.DiseaseDto;
-import com.hackathon.healsync.service.DiseaseService;
 
 @RestController
 @RequestMapping("/v1/healsync/disease")
 public class DiseaseController {
+    @GetMapping("/details")
+    public ResponseEntity<DiseaseDto> getDiseaseDetails(@RequestParam(required = false) Integer id,
+                                                       @RequestParam(required = false) String name) {
+        DiseaseDto result = null;
+        if (id != null) {
+            result = diseaseService.getDiseaseById(id);
+        } else if (name != null) {
+            result = diseaseService.getDiseaseByName(name);
+        }
+        if (result != null) {
+            return ResponseEntity.ok(result);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
     @GetMapping("/all")
     public ResponseEntity<java.util.List<DiseaseDto>> getAllDiseases() {
         return ResponseEntity.ok(diseaseService.getAllDiseases());
