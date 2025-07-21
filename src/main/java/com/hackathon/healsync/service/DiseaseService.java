@@ -9,6 +9,11 @@ import com.hackathon.healsync.repository.DiseaseRepository;
 
 @Service
 public class DiseaseService {
+    public java.util.List<DiseaseDto> getAllDiseases() {
+        return diseaseRepository.findAll().stream()
+            .map(DiseaseMapper::toDto)
+            .collect(java.util.stream.Collectors.toList());
+    }
     private final DiseaseRepository diseaseRepository;
 
     public DiseaseService(DiseaseRepository diseaseRepository) {
