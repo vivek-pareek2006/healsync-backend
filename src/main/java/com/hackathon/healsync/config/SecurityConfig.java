@@ -27,7 +27,9 @@ public class SecurityConfig {
         config.setAllowCredentials(true);
         config.setAllowedOrigins(Arrays.asList(
             "http://localhost:8080", // your frontend dev URL
-            "http://your-frontend-domain.com" // your deployed frontend URL
+            "http://your-frontend-domain.com", // your deployed frontend URL
+            "https://chipper-phoenix-dbce4e.netlify.app", // Netlify signup page
+            "https://neon-alpaca-73a373.netlify.app" // Additional Netlify frontend
         ));
         config.setAllowedHeaders(Arrays.asList("*"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
