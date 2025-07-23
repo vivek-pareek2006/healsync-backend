@@ -15,6 +15,16 @@ import com.hackathon.healsync.service.AppointmentService;
 @RestController
 @RequestMapping("/v1/healsync/book")
 public class AppointmentController {
+    @PostMapping("/cancel")
+    public ResponseEntity<String> cancelAppointment(@RequestParam("appointmentId") Integer appointmentId,
+                                                   @RequestParam("doctorId") Integer doctorId) {
+        boolean cancelled = appointmentService.cancelAppointmentByDoctor(appointmentId, doctorId);
+        if (cancelled) {
+            return ResponseEntity.ok("Appointment cancelled successfully.");
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Appointment not found or doctor not authorized.");
+        }
+    }
 
     private final AppointmentService appointmentService;
 

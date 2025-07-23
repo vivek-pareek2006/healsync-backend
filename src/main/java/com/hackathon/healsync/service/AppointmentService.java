@@ -1,3 +1,4 @@
+    // ...existing code...
 package com.hackathon.healsync.service;
 
 import java.time.LocalDateTime;
@@ -16,6 +17,15 @@ import com.hackathon.healsync.util.DoctorShift;
 
 @Service
 public class AppointmentService {
+    public boolean cancelAppointmentByDoctor(Integer appointmentId, Integer doctorId) {
+        AppointmentStatus appointment = appointmentStatusRepository.findById(appointmentId).orElse(null);
+        if (appointment != null && appointment.getDoctorId().equals(doctorId)) {
+            appointment.setStatus("cancelled");
+            appointmentStatusRepository.save(appointment);
+            return true;
+        }
+        return false;
+    }
     private final DoctorRepository doctorRepository;
     private final AppointmentStatusRepository appointmentStatusRepository;
     private final PatientRepository patientRepository;
