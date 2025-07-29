@@ -1,6 +1,8 @@
 package com.hackathon.healsync.service;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -61,5 +63,12 @@ public class DoctorService {
         }
         doctorRepository.deleteById(doctorId);
         return true;
+    }
+
+    public List<DoctorDto> getAllDoctorPublicProfiles() {
+        return doctorRepository.findAll().stream()
+                .map(DoctorMapper::toDto)
+                .peek(dto -> dto.setPassword(null)) // Hide password in public profile
+                .collect(Collectors.toList());
     }
 }
