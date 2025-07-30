@@ -35,4 +35,24 @@ public class DiseaseService {
         Disease savedDisease = diseaseRepository.save(disease);
         return DiseaseMapper.toDto(savedDisease);
     }
+
+    public DiseaseDto updateDisease(Integer diseaseId, DiseaseDto diseaseDto) {
+        return diseaseRepository.findById(diseaseId)
+            .map(existing -> {
+                existing.setName(diseaseDto.getName());
+                existing.setDescription(diseaseDto.getDescription());
+                existing.setPrecaution(diseaseDto.getPrecaution());
+                Disease saved = diseaseRepository.save(existing);
+                return DiseaseMapper.toDto(saved);
+            })
+            .orElse(null);
+    }
+
+    public boolean deleteDisease(Integer diseaseId) {
+        if (!diseaseRepository.existsById(diseaseId)) {
+            return false;
+        }
+        diseaseRepository.deleteById(diseaseId);
+        return true;
+    }
 }

@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 @RestController
 @RequestMapping("/v1/healsync/disease")
@@ -43,5 +46,23 @@ public class DiseaseController {
     public ResponseEntity<DiseaseDto> addDisease(@RequestBody DiseaseDto diseaseDto) {
         DiseaseDto savedDisease = diseaseService.addDisease(diseaseDto);
         return ResponseEntity.ok(savedDisease);
+    }
+
+    @PutMapping("/update/{diseaseId}")
+    public ResponseEntity<DiseaseDto> updateDisease(@PathVariable Integer diseaseId, @RequestBody DiseaseDto diseaseDto) {
+        DiseaseDto updated = diseaseService.updateDisease(diseaseId, diseaseDto);
+        if (updated == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping("/delete/{diseaseId}")
+    public ResponseEntity<?> deleteDisease(@PathVariable Integer diseaseId) {
+        boolean deleted = diseaseService.deleteDisease(diseaseId);
+        if (!deleted) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok("Disease deleted successfully");
     }
 }
