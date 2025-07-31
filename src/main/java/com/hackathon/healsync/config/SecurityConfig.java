@@ -31,7 +31,8 @@ public class SecurityConfig {
             "https://chipper-phoenix-dbce4e.netlify.app", // Netlify signup page
             "https://neon-alpaca-73a373.netlify.app",// Additional Netlify frontend
             "https://688b04aa01e5d573f2a9e94c--elaborate-bublanina-4e7ee2.netlify.app",
-            "https://healsync-hs.netlify.app"
+            "https://healsync-hs.netlify.app",
+            "http://127.0.0.1:3002" // Localhost for testing
         ));
         config.setAllowedHeaders(Arrays.asList("*"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
