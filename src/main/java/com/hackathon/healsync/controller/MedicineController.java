@@ -5,6 +5,8 @@ import com.hackathon.healsync.service.MedicineService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/v1/healsync/medicine")
 public class MedicineController {
@@ -21,7 +23,7 @@ public class MedicineController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<java.util.List<MedicineDto>> getAllMedicines() {
+    public ResponseEntity<List<MedicineDto>> getAllMedicines() {
         return ResponseEntity.ok(medicineService.getAllMedicines());
     }
 
