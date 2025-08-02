@@ -15,6 +15,13 @@ import com.hackathon.healsync.service.AppointmentService;
 @RestController
 @RequestMapping("/v1/healsync/book")
 public class AppointmentController {
+    
+    private final AppointmentService appointmentService;
+
+    public AppointmentController(AppointmentService appointmentService) {
+        this.appointmentService = appointmentService;
+    }
+
     @PostMapping("/cancel")
     public ResponseEntity<String> cancelAppointment(@RequestParam("appointmentId") Integer appointmentId,
                                                    @RequestParam("doctorId") Integer doctorId) {
@@ -24,12 +31,6 @@ public class AppointmentController {
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Appointment not found or doctor not authorized.");
         }
-    }
-
-    private final AppointmentService appointmentService;
-
-    public AppointmentController(AppointmentService appointmentService) {
-        this.appointmentService = appointmentService;
     }
 
     @PostMapping("/appointment")
