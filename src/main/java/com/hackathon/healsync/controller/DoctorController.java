@@ -14,15 +14,21 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.hackathon.healsync.dto.DoctorDto;
+import com.hackathon.healsync.dto.DoctorScheduleDto;
+import com.hackathon.healsync.dto.DoctorBlockDto;
+import com.hackathon.healsync.dto.ScheduleRequestDto;
 import com.hackathon.healsync.service.DoctorService;
+import com.hackathon.healsync.service.DoctorScheduleService;
 
 @RestController
 @RequestMapping("/v1/healsync/doctor")
 public class DoctorController {
     private final DoctorService doctorService;
+    private final DoctorScheduleService scheduleService;
 
-    public DoctorController(DoctorService doctorService) {
+    public DoctorController(DoctorService doctorService, DoctorScheduleService scheduleService) {
         this.doctorService = doctorService;
+        this.scheduleService = scheduleService;
     }
 
     @PostMapping("/add")
@@ -62,5 +68,50 @@ public class DoctorController {
     public ResponseEntity<List<DoctorDto>> getAllDoctorPublicProfiles() {
         List<DoctorDto> doctors = doctorService.getAllDoctorPublicProfiles();
         return ResponseEntity.ok(doctors);
+    }
+
+    // ==========================================
+    // SCHEDULE & AVAILABILITY MANAGEMENT APIs
+    // ==========================================
+
+    @PostMapping("/{doctorId}/schedule")
+    public ResponseEntity<?> setDoctorSchedule(@PathVariable Integer doctorId, @RequestBody ScheduleRequestDto scheduleRequest) {
+        try {
+            List<DoctorScheduleDto> schedules = scheduleService.setDoctorSchedule(doctorId, scheduleRequest);
+            return ResponseEntity.ok(schedules);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/{doctorId}/schedule")
+    public ResponseEntity<List<DoctorScheduleDto>> getDoctorSchedule(@PathVariable Integer doctorId) {
+        List<DoctorScheduleDto> schedules = scheduleService.getDoctorSchedule(doctorId);
+        return ResponseEntity.ok(schedules);
+    }
+
+    @PostMapping("/{doctorId}/blocks")
+    public ResponseEntity<?> createBlock(@PathVariable Integer doctorId, @RequestBody DoctorBlockDto blockDto) {
+        try {
+            DoctorBlockDto createdBlock = scheduleService.createBlock(doctorId, blockDto);
+            return ResponseEntity.ok(createdBlock);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/{doctorId}/blocks")
+    public ResponseEntity<List<DoctorBlockDto>> getDoctorBlocks(@PathVariable Integer doctorId) {
+        List<DoctorBlockDto> blocks = scheduleService.getDoctorBlocks(doctorId);
+        return ResponseEntity.ok(blocks);
+    }
+
+    @DeleteMapping("/{doctorId}/blocks/{blockId}")
+    public ResponseEntity<?> removeBlock(@PathVariable Integer doctorId, @PathVariable Integer blockId) {
+        boolean removed = scheduleService.removeBlock(blockId);
+        if (!removed) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Block not found");
+        }
+        return ResponseEntity.ok("Block removed successfully");
     }
 }
