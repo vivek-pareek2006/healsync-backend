@@ -1,19 +1,23 @@
 package com.hackathon.healsync.service;
 
-import com.hackathon.healsync.dto.TreatmentPlanRequestDto;
-import com.hackathon.healsync.dto.TreatmentPlanResponseDto;
-import com.hackathon.healsync.entity.TreatmentPlan;
-import com.hackathon.healsync.entity.TreatmentMedicine;
-import com.hackathon.healsync.entity.Patient;
-import com.hackathon.healsync.entity.Medicine;
-import com.hackathon.healsync.repository.TreatmentPlanRepository;
-import com.hackathon.healsync.repository.TreatmentMedicineRepository;
-import com.hackathon.healsync.repository.PatientRepository;
-import com.hackathon.healsync.repository.MedicineRepository;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.stream.Collectors;
+
+import com.hackathon.healsync.dto.TreatmentPlanRequestDto;
+import com.hackathon.healsync.dto.TreatmentPlanResponseDto;
+import com.hackathon.healsync.entity.Medicine;
+import com.hackathon.healsync.entity.Patient;
+import com.hackathon.healsync.entity.TreatmentMedicine;
+import com.hackathon.healsync.entity.TreatmentPlan;
+import com.hackathon.healsync.repository.MedicineRepository;
+import com.hackathon.healsync.repository.PatientRepository;
+import com.hackathon.healsync.repository.TreatmentMedicineRepository;
+import com.hackathon.healsync.repository.TreatmentPlanRepository;
 
 @Service
 public class TreatmentPlanService {
@@ -85,12 +89,17 @@ public class TreatmentPlanService {
         responseDto.setStartDate(plan.getStartDate());
         responseDto.setNotes(plan.getNotes());
 
-        if (plan.getTreatmentMedicines() != null) {
+        // ✅ Fixed: Always set medicines list, never null
+        List<TreatmentMedicine> medicines = plan.getTreatmentMedicines();
+        if (medicines != null && !medicines.isEmpty()) {
             responseDto.setMedicines(
-                plan.getTreatmentMedicines().stream()
+                medicines.stream()
                     .map(this::mapMedicineToDto)
                     .collect(Collectors.toList())
             );
+        } else {
+            // ✅ Set empty list instead of leaving it null
+            responseDto.setMedicines(new ArrayList<>());
         }
 
         return responseDto;

@@ -1,5 +1,9 @@
 package com.hackathon.healsync.entity;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,12 +14,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import java.math.BigDecimal;
-import java.util.List;
-import java.time.LocalDate;
 
 @Entity
 @Data
@@ -36,6 +37,16 @@ public class TreatmentPlan {
     @Column(columnDefinition = "TEXT")
     private String notes;
     @OneToMany(mappedBy = "treatmentPlan", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<TreatmentMedicine> treatmentMedicines;
-    private BigDecimal bill;
+    private List<TreatmentMedicine> treatmentMedicines = new ArrayList<>();
+
+    public List<TreatmentMedicine> getTreatmentMedicines() {
+        if (treatmentMedicines == null) {
+            treatmentMedicines = new ArrayList<>();
+        }
+        return treatmentMedicines;
+    }
+
+    public void setTreatmentMedicines(List<TreatmentMedicine> treatmentMedicines) {
+        this.treatmentMedicines = treatmentMedicines;
+    }
 }
