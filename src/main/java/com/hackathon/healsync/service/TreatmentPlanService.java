@@ -72,11 +72,11 @@ public class TreatmentPlanService {
             }
         }
 
-        // Fetch the saved plan with medicines to return complete response
-        TreatmentPlan completeplan = treatmentPlanRepository.findById(savedPlan.getTreatmentId())
-            .orElseThrow(() -> new RuntimeException("Failed to retrieve saved treatment plan"));
+        // Fetch the medicines directly and set them on the saved plan
+        List<TreatmentMedicine> savedMedicines = treatmentMedicineRepository.findByTreatmentPlan(savedPlan);
+        savedPlan.setTreatmentMedicines(savedMedicines);
         
-        return mapToResponseDto(completeplan);
+        return mapToResponseDto(savedPlan);
     }
 
     private TreatmentPlanResponseDto mapToResponseDto(TreatmentPlan plan) {
