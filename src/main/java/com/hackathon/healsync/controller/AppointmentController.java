@@ -34,7 +34,7 @@ public class AppointmentController {
     }
 
     @PostMapping("/appointment")
-    public ResponseEntity<?> bookAppointment(@RequestParam("speciality") String speciality,
+    public ResponseEntity<?> bookAppointment(@RequestParam("speaciality") String speaciality,
                                              @RequestParam("startDateTime") String startDateTime,
                                              @RequestParam("endDateTime") String endDateTime,
                                              @RequestParam("patientId") Integer patientId) {
@@ -47,9 +47,9 @@ public class AppointmentController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid dateTime format. Use ISO format.");
         }
 
-        AppointmentResponseDto result = appointmentService.bookAppointment(patientId, speciality, start, end);
+        AppointmentResponseDto result = appointmentService.bookAppointment(patientId, speaciality, start, end);
         if (result == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No doctor available for the given speciality and time range.");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No doctor available for the given speaciality and time range.");
         }
         return ResponseEntity.ok(result);
     }

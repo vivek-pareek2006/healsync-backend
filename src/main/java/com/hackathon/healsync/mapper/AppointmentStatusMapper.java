@@ -9,8 +9,8 @@ public class AppointmentStatusMapper {
         dto.setScheduleId(entity.getScheduleId());
         dto.setDoctorId(entity.getDoctorId());
         dto.setPatientId(entity.getPatientId());
-        dto.setStartTIme(entity.getStartTIme());
-        dto.setEndTIme(entity.getEndTIme());
+        dto.setStartTime(entity.getStartTime());
+        dto.setEndTime(entity.getEndTime());
         dto.setStatus(entity.getStatus());
         dto.setDoctorNotes(entity.getDoctorNotes());
         return dto;
@@ -21,8 +21,8 @@ public class AppointmentStatusMapper {
         entity.setScheduleId(dto.getScheduleId());
         entity.setDoctorId(dto.getDoctorId());
         entity.setPatientId(dto.getPatientId());
-        entity.setStartTIme(dto.getStartTIme());
-        entity.setEndTIme(dto.getEndTIme());
+        entity.setStartTime(dto.getStartTime());
+        entity.setEndTime(dto.getEndTime());
         entity.setStatus(dto.getStatus());
         entity.setDoctorNotes(dto.getDoctorNotes());
         return entity;

@@ -17,15 +17,6 @@ import com.hackathon.healsync.util.DoctorShift;
 
 @Service
 public class AppointmentService {
-    public boolean cancelAppointmentByDoctor(Integer appointmentId, Integer doctorId) {
-        AppointmentStatus appointment = appointmentStatusRepository.findById(appointmentId).orElse(null);
-        if (appointment != null && appointment.getDoctorId().equals(doctorId)) {
-            appointment.setStatus("cancelled");
-            appointmentStatusRepository.save(appointment);
-            return true;
-        }
-        return false;
-    }
     private final DoctorRepository doctorRepository;
     private final AppointmentStatusRepository appointmentStatusRepository;
     private final PatientRepository patientRepository;
@@ -38,9 +29,19 @@ public class AppointmentService {
         this.patientRepository = patientRepository;
     }
 
-    public Integer findAvailableDoctorId(String speciality, LocalDateTime startDateTime, LocalDateTime endDateTime) {
+    public boolean cancelAppointmentByDoctor(Integer appointmentId, Integer doctorId) {
+        AppointmentStatus appointment = appointmentStatusRepository.findById(appointmentId).orElse(null);
+        if (appointment != null && appointment.getDoctorId().equals(doctorId)) {
+            appointment.setStatus("cancelled");
+            appointmentStatusRepository.save(appointment);
+            return true;
+        }
+        return false;
+    }
+
+    public Integer findAvailableDoctorId(String speaciality, LocalDateTime startDateTime, LocalDateTime endDateTime) {
         DoctorShift requiredShift = DoctorShift.fromTimeRange(startDateTime, endDateTime);
-        List<Doctor> doctors = doctorRepository.findBySpeacialityAndShift(speciality, requiredShift.name());
+        List<Doctor> doctors = doctorRepository.findBySpeacialityAndShift(speaciality, requiredShift.name());
         for (var doctor : doctors) {
             var conflicts = appointmentStatusRepository.findConflictingAppointments(doctor.getDoctorId(), startDateTime, endDateTime);
             if (conflicts == null || conflicts.isEmpty()) {
@@ -50,8 +51,8 @@ public class AppointmentService {
         return null;
     }
 
-    public AppointmentResponseDto bookAppointment(Integer patientId, String speciality, LocalDateTime startDateTime, LocalDateTime endDateTime) {
-        Integer doctorId = findAvailableDoctorId(speciality, startDateTime, endDateTime);
+    public AppointmentResponseDto bookAppointment(Integer patientId, String speaciality, LocalDateTime startDateTime, LocalDateTime endDateTime) {
+        Integer doctorId = findAvailableDoctorId(speaciality, startDateTime, endDateTime);
         if (doctorId == null) {
             return null;
         }
@@ -59,8 +60,8 @@ public class AppointmentService {
         AppointmentStatus appointment = new AppointmentStatus();
         appointment.setDoctorId(doctorId);
         appointment.setPatientId(patientId);
-        appointment.setStartTIme(startDateTime);
-        appointment.setEndTIme(endDateTime);
+        appointment.setStartTime(startDateTime);
+        appointment.setEndTime(endDateTime);
         appointment.setStatus("booked");
         appointmentStatusRepository.save(appointment);
 

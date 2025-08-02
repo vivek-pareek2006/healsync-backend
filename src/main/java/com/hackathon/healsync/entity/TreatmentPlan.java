@@ -39,6 +39,28 @@ public class TreatmentPlan {
     @OneToMany(mappedBy = "treatmentPlan", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<TreatmentMedicine> treatmentMedicines = new ArrayList<>();
 
+    // Explicit getters and setters for IDE compatibility
+    public Integer getTreatmentId() { return treatmentId; }
+    public void setTreatmentId(Integer treatmentId) { this.treatmentId = treatmentId; }
+    
+    public Integer getDiseaseId() { return diseaseId; }
+    public void setDiseaseId(Integer diseaseId) { this.diseaseId = diseaseId; }
+    
+    public Integer getDoctorId() { return doctorId; }
+    public void setDoctorId(Integer doctorId) { this.doctorId = doctorId; }
+    
+    public Patient getPatient() { return patient; }
+    public void setPatient(Patient patient) { this.patient = patient; }
+    
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+    
+    public LocalDate getStartDate() { return startDate; }
+    public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
+    
+    public String getNotes() { return notes; }
+    public void setNotes(String notes) { this.notes = notes; }
+
     public List<TreatmentMedicine> getTreatmentMedicines() {
         if (treatmentMedicines == null) {
             treatmentMedicines = new ArrayList<>();

@@ -2,6 +2,7 @@ package com.hackathon.healsync.mapper;
 
 import com.hackathon.healsync.entity.TreatmentPlan;
 import com.hackathon.healsync.dto.TreatmentPlanDto;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class TreatmentPlanMapper {
@@ -15,9 +16,13 @@ public class TreatmentPlanMapper {
         dto.setStartDate(entity.getStartDate());
         dto.setNotes(entity.getNotes());
         if (entity.getTreatmentMedicines() != null) {
-            dto.setTreatmentMedicineIds(entity.getTreatmentMedicines().stream().map(tm -> tm.getTreatmentMedID()).collect(Collectors.toList()));
+            List<Integer> medicineIds = entity.getTreatmentMedicines().stream()
+                .map(tm -> tm.getTreatmentMedID())
+                .collect(Collectors.toList());
+            dto.setTreatmentMedicineIds(medicineIds);
         }
-        dto.setBill(entity.getBill());
+        // TODO: Calculate bill from treatment medicines
+        // dto.setBill(entity.getBill());
         return dto;
     }
 
@@ -29,7 +34,8 @@ public class TreatmentPlanMapper {
         entity.setStatus(dto.getStatus());
         entity.setStartDate(dto.getStartDate());
         entity.setNotes(dto.getNotes());
-        entity.setBill(dto.getBill());
+        // TODO: Handle bill field - maybe add to entity or calculate separately
+        // entity.setBill(dto.getBill());
         // Patient and TreatmentMedicines mapping can be handled separately if needed
         return entity;
     }

@@ -31,4 +31,29 @@ public class TreatmentMedicine {
     @ManyToOne
     @JoinColumn(name = "treatment_id")
     private TreatmentPlan treatmentPlan;
+    
+    // Explicit getters and setters for IDE compatibility
+    public Integer getTreatmentMedID() { return treatmentMedID; }
+    public void setTreatmentMedID(Integer treatmentMedID) { this.treatmentMedID = treatmentMedID; }
+    
+    public Integer getTreatmentID() { return treatmentID; }
+    public void setTreatmentID(Integer treatmentID) { this.treatmentID = treatmentID; }
+    
+    public String getDosage() { return dosage; }
+    public void setDosage(String dosage) { this.dosage = dosage; }
+    
+    public String getTiming() { return timing; }
+    public void setTiming(String timing) { this.timing = timing; }
+    
+    public String getMedicineName() { return medicineName; }
+    public void setMedicineName(String medicineName) { this.medicineName = medicineName; }
+    
+    public String getUsageInfo() { return usageInfo; }
+    public void setUsageInfo(String usageInfo) { this.usageInfo = usageInfo; }
+    
+    public String getSideEffect() { return sideEffect; }
+    public void setSideEffect(String sideEffect) { this.sideEffect = sideEffect; }
+    
+    public TreatmentPlan getTreatmentPlan() { return treatmentPlan; }
+    public void setTreatmentPlan(TreatmentPlan treatmentPlan) { this.treatmentPlan = treatmentPlan; }
 }

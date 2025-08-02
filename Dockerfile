@@ -1,18 +1,15 @@
-# Use official OpenJDK image for Java 23
-FROM eclipse-temurin:23-jdk
+# Use official OpenJDK image for Java 17
+FROM eclipse-temurin:17-jdk
 
 # Set working directory
 WORKDIR /app
 
 # Copy Gradle wrapper and build files
-COPY gradlew gradlew.bat build.gradle settings.gradle /app/
-COPY gradle /app/gradle
+COPY gradlew gradlew.bat build.gradle settings.gradle ./
+COPY gradle gradle
 
 # Copy source code
-COPY src /app/src
-
-# Copy resources
-COPY src/main/resources /app/src/main/resources
+COPY src src
 
 # Make gradlew executable
 RUN chmod +x gradlew
@@ -20,15 +17,8 @@ RUN chmod +x gradlew
 # Build the application
 RUN ./gradlew build -x test
 
-# Use a minimal JRE image for running the app
-FROM eclipse-temurin:23-jre
-WORKDIR /app
-
-# Copy built jar from builder image
-COPY --from=0 /app/build/libs/*.jar /app/app.jar
-
 # Expose port 8080
 EXPOSE 8080
 
 # Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+CMD ["java", "-jar", "build/libs/healsync-0.0.1-SNAPSHOT.jar"]
