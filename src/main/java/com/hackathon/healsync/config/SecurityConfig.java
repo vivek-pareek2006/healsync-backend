@@ -32,7 +32,9 @@ public class SecurityConfig {
             "https://688b04aa01e5d573f2a9e94c--elaborate-bublanina-4e7ee2.netlify.app",
             "https://healsync-hs.netlify.app",
             "http://127.0.0.1:3002",
-            "http://127.0.0.1:5500"// Localhost for testing
+            "http://127.0.0.1:5500",
+            "http://127.0.0.1:3000"
+            // Localhost for testing
         ));
         config.setAllowedHeaders(Arrays.asList("*"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
