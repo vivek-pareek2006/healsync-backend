@@ -823,7 +823,7 @@ DISEASE MANAGEMENT APIs
       "precaution": "Avoid triggers like smoke and allergens, use prescribed inhalers, regular medical check-ups."
     }
 
-27. UPDATE DISEASE
+35. UPDATE DISEASE
     Method: PUT
     URL: https://healsync-backend-d788.onrender.com/v1/healsync/disease/update/1
     Headers: Content-Type: application/json
@@ -843,7 +843,7 @@ DISEASE MANAGEMENT APIs
       "precaution": "Daily exercise, low sodium diet, stress management, regular blood pressure monitoring, medication compliance."
     }
 
-28. DELETE DISEASE
+36. DELETE DISEASE
     Method: DELETE
     URL: https://healsync-backend-d788.onrender.com/v1/healsync/disease/delete/1
     Headers: None required
@@ -944,3 +944,33 @@ curl -X POST https://healsync-backend-d788.onrender.com/v1/healsync/doctor/1/blo
 
 # Remove Availability Block
 curl -X DELETE https://healsync-backend-d788.onrender.com/v1/healsync/doctor/1/blocks/1
+
+# Register Patient (Alternative Endpoint)
+curl -X POST https://healsync-backend-d788.onrender.com/api/patients \
+  -H "Content-Type: application/json" \
+  -d '{
+    "patientName": "Sarah Wilson",
+    "patientAge": 32,
+    "gender": "Female",
+    "mobileNo": "9876543211",
+    "email": "sarah.wilson@example.com",
+    "password": "securePassword456"
+  }'
+
+# Get All Doctors (Alternative Endpoint)
+curl -X GET https://healsync-backend-d788.onrender.com/api/doctors
+
+# Get Doctor by ID (Alternative Endpoint)
+curl -X GET https://healsync-backend-d788.onrender.com/api/doctors/1
+
+# Get Emergency Services
+curl -X GET https://healsync-backend-d788.onrender.com/api/emergency-services
+
+# Get Emergency Services by Speciality
+curl -X GET https://healsync-backend-d788.onrender.com/api/emergency-services/Cardiology
+
+# Search Doctors by Speciality
+curl -X GET "https://healsync-backend-d788.onrender.com/api/doctors/search?speciality=Cardiology"
+
+# Get Available Doctors
+curl -X GET https://healsync-backend-d788.onrender.com/api/doctors/available
