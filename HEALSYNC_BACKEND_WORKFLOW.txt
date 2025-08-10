@@ -1,0 +1,357 @@
+HEALSYNC BACKEND WORKFLOW - SIMPLIFIED FLOWCHART
+================================================
+
+HOW THE HEALSYNC BACKEND WORKS
+==============================
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        HEALSYNC BACKEND FLOW                           │
+└─────────────────────────────────────────────────────────────────────────┘
+
+1. REQUEST ENTRY POINT
+======================
+                    ┌─────────────┐
+                    │  Frontend   │
+                    │ (React App) │
+                    │ Makes API   │
+                    │   Call      │
+                    └─────┬───────┘
+                          │ HTTP Request
+                          ▼
+                    ┌─────────────┐
+                    │   Spring    │
+                    │   Boot      │
+                    │ Application │
+                    │ (Port 8080) │
+                    └─────┬───────┘
+                          │
+                          ▼
+
+2. CONTROLLER LAYER
+===================
+                    ┌─────────────┐
+                    │ @Controller │
+                    │   Routes    │
+                    │             │
+                    │ • Patient   │
+                    │ • Doctor    │
+                    │ • Appointment│
+                    │ • Message   │
+                    │ • Treatment │
+                    └─────┬───────┘
+                          │ Delegates to
+                          ▼
+
+3. SERVICE LAYER (Business Logic)
+=================================
+                    ┌─────────────┐
+                    │  @Service   │
+                    │   Classes   │
+                    │             │
+                    │ • Validates │
+                    │ • Processes │
+                    │ • Transforms│
+                    │ • Calls DB  │
+                    └─────┬───────┘
+                          │ Uses
+                          ▼
+
+4. REPOSITORY LAYER (Data Access)
+=================================
+                    ┌─────────────┐
+                    │@Repository  │
+                    │ Interfaces  │
+                    │             │
+                    │ • JPA       │
+                    │ • Hibernate │
+                    │ • Custom    │
+                    │   Queries   │
+                    └─────┬───────┘
+                          │ Connects to
+                          ▼
+
+5. DATABASE
+===========
+                    ┌─────────────┐
+                    │   MySQL     │
+                    │  Database   │
+                    │             │
+                    │ • Tables    │
+                    │ • Relations │
+                    │ • Data      │
+                    └─────┬───────┘
+                          │ Returns Data
+                          ▼
+                    ┌─────────────┐
+                    │  Response   │
+                    │ Back to     │
+                    │  Frontend   │
+                    └─────────────┘
+
+=============================================================================
+DETAILED BACKEND WORKFLOW
+=============================================================================
+
+PATIENT LOGIN EXAMPLE:
+======================
+
+Frontend Request
+       ↓
+┌─────────────┐    POST /v1/healsync/patient/login
+│ React Form  │ ──▶ {email: "user@email.com", password: "pass123"}
+└─────────────┘
+       │
+       ▼
+┌─────────────┐
+│PatientAuth  │ ──▶ @PostMapping("/login")
+│Controller   │     public ResponseEntity<PatientDto> login(...)
+└─────┬───────┘
+      │ calls
+      ▼
+┌─────────────┐
+│PatientAuth  │ ──▶ validateCredentials(email, password)
+│Service      │     • Check email exists
+└─────┬───────┘     • Verify password hash
+      │ uses        • Return patient data
+      ▼
+┌─────────────┐
+│Patient      │ ──▶ findByEmail(email)
+│Repository   │     • JPA Query to MySQL
+└─────┬───────┘     • Returns Patient entity
+      │
+      ▼
+┌─────────────┐
+│   MySQL     │ ──▶ SELECT * FROM patient WHERE email = ?
+│  Database   │     Returns: Patient record
+└─────┬───────┘
+      │
+      ▼ (Response flows back up)
+┌─────────────┐
+│   Return    │ ──▶ PatientDto with profile data
+│ to Frontend │     Status: 200 OK or 401 Unauthorized
+└─────────────┘
+
+APPOINTMENT BOOKING EXAMPLE:
+============================
+
+Frontend Request
+       ↓
+┌─────────────┐    POST /v1/healsync/book/appointment
+│ Booking     │ ──▶ ?specialty=Cardiology&startTime=10:00&patientId=1
+│ Form        │
+└─────────────┘
+       │
+       ▼
+┌─────────────┐
+│Appointment  │ ──▶ @PostMapping("/appointment")
+│Controller   │     public ResponseEntity<AppointmentDto> book(...)
+└─────┬───────┘
+      │ calls
+      ▼
+┌─────────────┐
+│Appointment  │ ──▶ bookAppointment(specialty, time, patientId)
+│Service      │     • Find available doctors
+└─────┬───────┘     • Check doctor schedule
+      │ uses        • Create appointment
+      ▼             • Return details
+┌─────────────┐
+│Doctor &     │ ──▶ findBySpecialty(specialty)
+│Appointment  │     findDoctorAvailability(doctorId, time)
+│Repository   │     save(appointmentEntity)
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐
+│   MySQL     │ ──▶ Multiple queries:
+│  Database   │     1. SELECT doctors WHERE specialty = ?
+└─────┬───────┘     2. CHECK schedule conflicts
+      │             3. INSERT new appointment
+      ▼
+┌─────────────┐
+│   Return    │ ──▶ AppointmentDto with doctor & time details
+│ to Frontend │     Status: 200 OK with appointment ID
+└─────────────┘
+
+MESSAGE SENDING EXAMPLE:
+========================
+
+Frontend Request
+       ↓
+┌─────────────┐    POST /v1/healsync/messages/send
+│ Chat        │ ──▶ {senderId: 1, receiverId: 2, message: "Hello"}
+│ Interface   │
+└─────────────┘
+       │
+       ▼
+┌─────────────┐
+│Message      │ ──▶ @PostMapping("/send")
+│Controller   │     public ResponseEntity<MessageDto> send(...)
+└─────┬───────┘
+      │ calls
+      ▼
+┌─────────────┐
+│Message      │ ──▶ sendMessage(request)
+│Service      │     • Validate participants
+└─────┬───────┘     • Save message
+      │ uses        • Update conversation
+      ▼             • Send real-time notification
+┌─────────────┐
+│Message &    │ ──▶ save(messageEntity)
+│Conversation │     updateLastMessage(conversationId)
+│Repository   │     incrementUnreadCount(receiverId)
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐
+│   MySQL     │ ──▶ 1. INSERT into message table
+│  Database   │     2. UPDATE conversation table
+└─────┬───────┘     3. UPDATE unread counts
+      │
+      ▼
+┌─────────────┐
+│   Return    │ ──▶ MessageDto with timestamp & ID
+│ to Frontend │     Status: 200 OK
+└─────────────┘     + WebSocket notification to receiver
+
+=============================================================================
+KEY BACKEND COMPONENTS
+=============================================================================
+
+SPRING BOOT STRUCTURE:
+======================
+src/main/java/com/hackathon/healsync/
+│
+├── HealsyncApplication.java          ← Main application entry point
+│
+├── config/
+│   └── SecurityConfig.java           ← CORS & security settings
+│
+├── controller/                       ← REST API endpoints
+│   ├── PatientAuthController.java    ← Patient login/register
+│   ├── DoctorController.java         ← Doctor management
+│   ├── AppointmentController.java    ← Booking appointments
+│   ├── MessageController.java        ← Chat system
+│   └── TreatmentPlanController.java  ← Medical treatments
+│
+├── service/                          ← Business logic layer
+│   ├── PatientService.java           ← Patient operations
+│   ├── DoctorService.java            ← Doctor operations
+│   ├── AppointmentService.java       ← Appointment logic
+│   ├── MessageService.java           ← Messaging logic
+│   └── TreatmentPlanService.java     ← Treatment logic
+│
+├── repository/                       ← Database access layer
+│   ├── PatientRepository.java        ← Patient data access
+│   ├── DoctorRepository.java         ← Doctor data access
+│   ├── AppointmentRepository.java    ← Appointment data access
+│   ├── MessageRepository.java        ← Message data access
+│   └── TreatmentPlanRepository.java  ← Treatment data access
+│
+├── entity/                           ← Database table mappings
+│   ├── Patient.java                  ← Patient table
+│   ├── Doctor.java                   ← Doctor table
+│   ├── Appointment.java              ← Appointment table
+│   ├── Message.java                  ← Message table
+│   └── TreatmentPlan.java            ← Treatment table
+│
+├── dto/                              ← Data transfer objects
+│   ├── PatientDto.java               ← Patient API responses
+│   ├── DoctorDto.java                ← Doctor API responses
+│   ├── AppointmentDto.java           ← Appointment API responses
+│   └── MessageDto.java               ← Message API responses
+│
+└── mapper/                           ← Entity ↔ DTO conversion
+    ├── PatientMapper.java            ← Patient conversions
+    ├── DoctorMapper.java             ← Doctor conversions
+    └── MessageMapper.java            ← Message conversions
+
+=============================================================================
+HOW DATA FLOWS THROUGH THE BACKEND
+=============================================================================
+
+REQUEST PROCESSING PATTERN:
+===========================
+
+1. HTTP Request arrives at Controller
+2. Controller validates request parameters
+3. Controller calls appropriate Service method
+4. Service performs business logic & validation
+5. Service calls Repository for database operations
+6. Repository uses JPA/Hibernate to query MySQL
+7. Database returns Entity objects
+8. Service processes/transforms data
+9. Mapper converts Entity to DTO
+10. Controller returns DTO as JSON response
+
+ERROR HANDLING PATTERN:
+=======================
+
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│   Error     │───▶│   Global    │───▶│   JSON      │
+│  Occurs     │    │  Exception  │    │  Error      │
+│ Anywhere    │    │  Handler    │    │ Response    │
+└─────────────┘    └─────────────┘    └─────────────┘
+
+SECURITY FLOW:
+==============
+
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│  HTTPS      │───▶│    CORS     │───▶│ Controller  │
+│ Request     │    │ Validation  │    │   Method    │
+└─────────────┘    └─────────────┘    └─────────────┘
+
+DATABASE CONNECTION:
+====================
+
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│ Application │───▶│ HikariCP    │───▶│   MySQL     │
+│Startup      │    │Connection   │    │  Database   │
+│             │    │   Pool      │    │             │
+└─────────────┘    └─────────────┘    └─────────────┘
+
+=============================================================================
+BACKEND DEPLOYMENT & RUNTIME
+=============================================================================
+
+LOCAL DEVELOPMENT:
+==================
+1. Start MySQL database (localhost:3306)
+2. Run: ./gradlew bootRun
+3. Backend starts on http://localhost:8080
+4. All APIs available at http://localhost:8080/v1/healsync/*
+
+PRODUCTION (Render.com):
+========================
+1. Code pushed to GitHub
+2. Render automatically builds with Gradle
+3. Starts Spring Boot application
+4. Connects to cloud MySQL database
+5. APIs available at https://healsync-backend-d788.onrender.com
+
+SUMMARY: HOW THE BACKEND WORKS
+===============================
+
+The HealSync backend is a Spring Boot application that:
+
+1. 📡 Receives HTTP requests from React frontend
+2. 🛣️  Routes requests through Controllers (REST endpoints)
+3. 🧠 Processes business logic in Service layer
+4. 💾 Accesses MySQL database through Repository layer
+5. 🔄 Transforms data using Entity/DTO mappings
+6. 📤 Returns JSON responses to frontend
+
+Key Features:
+• RESTful API design
+• Layered architecture (Controller → Service → Repository)
+• JPA/Hibernate for database operations
+• MySQL for data persistence
+• CORS enabled for frontend communication
+• Error handling with proper HTTP status codes
+• Real-time messaging capabilities
+
+The backend handles all core healthcare operations:
+• Patient/Doctor authentication
+• Appointment scheduling
+• Treatment plan management
+• Real-time messaging
+• Medical data storage

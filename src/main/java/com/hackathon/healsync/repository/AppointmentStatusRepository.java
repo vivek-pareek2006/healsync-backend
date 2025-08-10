@@ -13,4 +13,11 @@ import com.hackathon.healsync.entity.AppointmentStatus;
 public interface AppointmentStatusRepository extends JpaRepository<AppointmentStatus, Integer> {
     @Query("SELECT a FROM AppointmentStatus a WHERE a.doctorId = :doctorId AND ((a.startTime < :endDateTime AND a.endTime > :startDateTime))")
     List<AppointmentStatus> findConflictingAppointments(Integer doctorId, LocalDateTime startDateTime, LocalDateTime endDateTime);
+
+    // Derived queries for fetching appointments
+    List<AppointmentStatus> findByPatientIdOrderByStartTimeDesc(Integer patientId);
+
+    List<AppointmentStatus> findByDoctorIdOrderByStartTimeDesc(Integer doctorId);
+
+    List<AppointmentStatus> findByDoctorIdAndStartTimeBetweenOrderByStartTimeAsc(Integer doctorId, LocalDateTime start, LocalDateTime end);
 }

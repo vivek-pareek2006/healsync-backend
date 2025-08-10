@@ -1,0 +1,151 @@
+HEALSYNC PROJECT - COMPLETE FLOW (ONE PAGE)
+============================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           HEALSYNC SYSTEM OVERVIEW                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+USER TYPES & ENTRY POINTS:
+===========================
+┌─────────────┐              ┌─────────────┐
+│  PATIENTS   │              │   DOCTORS   │
+│             │              │             │
+│ • Register  │              │ • Login     │
+│ • Login     │              │ • Dashboard │
+│ • Book Apt  │              │ • Schedule  │
+│ • Message   │              │ • Patients  │
+└─────┬───────┘              └─────┬───────┘
+      │                            │
+      └────────────┬───────────────┘
+                   │
+                   ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         REACT FRONTEND                                     │
+│ • Patient Dashboard  • Doctor Dashboard  • Appointment Booking             │
+│ • Messaging Interface • Treatment Plans  • Emergency Services              │
+└─────────────────────────┬───────────────────────────────────────────────────┘
+                          │ HTTP/REST API
+                          ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        SPRING BOOT BACKEND                                 │
+│                                                                             │
+│ ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐       │
+│ │CONTROLLERS │  │  SERVICES   │  │REPOSITORIES │  │   MAPPERS   │       │
+│ │            │  │             │  │             │  │             │       │
+│ │• Patient   │→ │• Validation │→ │• JPA/       │→ │• Entity ↔   │       │
+│ │• Doctor    │  │• Business   │  │  Hibernate  │  │  DTO        │       │
+│ │• Appointment│  │  Logic      │  │• Database   │  │  Conversion │       │
+│ │• Message   │  │• Data       │  │  Queries    │  │             │       │
+│ │• Treatment │  │  Transform  │  │             │  │             │       │
+│ └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘       │
+└─────────────────────────┬───────────────────────────────────────────────────┘
+                          │ SQL Queries
+                          ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          MySQL DATABASE                                    │
+│                                                                             │
+│ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐          │
+│ │   Patient   │ │   Doctor    │ │Appointment  │ │   Message   │          │
+│ │   Records   │ │  Profiles   │ │   Data      │ │Conversations│          │
+│ └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘          │
+│                                                                             │
+│ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐          │
+│ │ Treatment   │ │  Medicine   │ │   Disease   │ │  Emergency  │          │
+│ │   Plans     │ │  Database   │ │  Catalog    │ │   Records   │          │
+│ └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘          │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+CORE WORKFLOWS:
+===============
+
+1. PATIENT JOURNEY:
+   Register → Login → Dashboard → Book Appointment → Get Treatment → Message Doctor
+
+2. DOCTOR JOURNEY:
+   Login → Dashboard → View Schedule → Treat Patients → Create Plans → Respond Messages
+
+3. APPOINTMENT FLOW:
+   Select Specialty → Choose Time → Find Doctor → Confirm Booking → Get Confirmation
+
+4. TREATMENT FLOW:
+   Doctor Reviews → Select Disease → Add Medicines → Set Dosage → Save Plan
+
+5. MESSAGING FLOW:
+   Compose Message → Send → Save to DB → Real-time Notification → Update UI
+
+KEY API ENDPOINTS:
+==================
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│ AUTHENTICATION │  │   APPOINTMENTS  │  │    MESSAGING    │
+│                 │  │                 │  │                 │
+│POST /patient/   │  │POST /book/      │  │POST /messages/  │
+│     login       │  │     appointment │  │     send        │
+│POST /patient/   │  │GET /patient/    │  │GET /messages/   │
+│     add         │  │     appointments│  │    conversation │
+│GET /doctor/     │  │POST /book/      │  │GET /doctor/     │
+│    profiles     │  │     cancel      │  │    conversations│
+└─────────────────┘  └─────────────────┘  └─────────────────┘
+
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│   TREATMENTS    │  │    EMERGENCY    │  │   MEDICINES     │
+│                 │  │                 │  │                 │
+│POST /patients/  │  │GET /emergency/  │  │GET /medicine/   │
+│     treatment-  │  │     doctors     │  │     all         │
+│     plans       │  │GET /emergency/  │  │POST /medicine/  │
+│GET /patients/   │  │     doctors/    │  │     add         │
+│    treatment-   │  │     {specialty} │  │PUT /medicine/   │
+│    plans        │  │                 │  │    {id}         │
+└─────────────────┘  └─────────────────┘  └─────────────────┘
+
+DATA FLOW SUMMARY:
+==================
+Frontend Request → Controller → Service → Repository → Database
+                ↑                                              │
+                └──────── JSON Response ←←←←←←←←←←←←←←←←←←←←←←←←┘
+
+ERROR HANDLING:
+===============
+• 400 Bad Request: Invalid input
+• 401 Unauthorized: Login failed
+• 404 Not Found: Resource missing
+• 500 Server Error: System failure
+
+SECURITY FEATURES:
+==================
+• HTTPS encryption
+• CORS protection
+• Password hashing
+• Input validation
+• SQL injection prevention
+
+REAL-TIME FEATURES:
+===================
+• WebSocket messaging
+• Live notifications
+• Instant updates
+• Online status tracking
+
+DEPLOYMENT:
+===========
+Development: localhost:8080
+Production: https://healsync-backend-d788.onrender.com
+
+TECHNOLOGY STACK:
+=================
+Backend: Spring Boot + MySQL + JPA/Hibernate
+Frontend: React + TypeScript + Axios
+Security: CORS + HTTPS + Input Validation
+Real-time: WebSocket + Notifications
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                               SUMMARY                                       │
+│                                                                             │
+│ HealSync is a complete healthcare management system that connects patients  │
+│ with doctors through digital services. It handles appointment booking,     │
+│ treatment management, real-time messaging, and medical record keeping      │
+│ through a secure, scalable Spring Boot backend with React frontend.        │
+│                                                                             │
+│ The system processes 41+ API endpoints covering all healthcare operations  │
+│ from patient registration to emergency services, with real-time messaging  │
+│ and comprehensive treatment plan management.                                │
+└─────────────────────────────────────────────────────────────────────────────┘

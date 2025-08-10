@@ -1,0 +1,1322 @@
+HEALSYNC MESSAGING SYSTEM - COMPLETE IMPLEMENTATION GUIDE
+===========================================================
+
+TABLE OF CONTENTS
+=================
+1. System Overview
+2. Database Structure & Relationships
+3. API Endpoints & Usage
+4. Frontend Implementation Strategy
+5. Doctor Interface Components
+6. Patient Interface Components
+7. Real-time Features Implementation
+8. Step-by-Step Implementation
+9. Data Flow Examples
+10. Error Handling & Validation
+11. Testing Scenarios
+12. Best Practices & Security
+
+=============================================================================
+1. SYSTEM OVERVIEW
+=============================================================================
+
+The Messaging System enables secure communication between doctors and patients 
+within the HealSync platform. It provides real-time messaging capabilities 
+with read receipts, conversation management, and notification features.
+
+CORE FEATURES:
+- Direct messaging between doctors and patients
+- Conversation threading and history
+- Read receipts and message status tracking
+- Unread message counts and notifications
+- File attachments support (images, documents)
+- Message search and filtering
+- Secure and HIPAA-compliant communication
+
+KEY ENTITIES:
+- Message: Individual message records
+- Conversation: Threaded communication between doctor-patient pairs
+- MessageType: Enum for different message types (TEXT, IMAGE, DOCUMENT, VOICE_NOTE)
+
+MESSAGING WORKFLOW:
+1. Patient/Doctor initiates conversation
+2. Messages are sent and stored with timestamps
+3. Conversations are automatically created/updated
+4. Unread counts are maintained for both parties
+5. Read receipts are tracked
+6. Message history is preserved
+
+=============================================================================
+2. DATABASE STRUCTURE & RELATIONSHIPS
+=============================================================================
+
+Message Table:
+-------------
+messageId (Primary Key) - Unique identifier for each message
+senderType - "DOCTOR" or "PATIENT" (who sent the message)
+receiverType - "DOCTOR" or "PATIENT" (who receives the message)
+senderId - ID of the sender (doctorId or patientId)
+receiverId - ID of the receiver (doctorId or patientId)
+messageContent - The actual message text content
+sentAt - Timestamp when message was sent
+isRead - Boolean indicating if message has been read
+readAt - Timestamp when message was read
+messageType - Enum: TEXT, IMAGE, DOCUMENT, VOICE_NOTE
+attachmentUrl - URL to attached file (optional)
+isActive - Boolean for soft deletion
+
+Conversation Table:
+------------------
+conversationId (Primary Key) - Unique identifier for conversation
+doctorId - ID of the doctor in conversation
+patientId - ID of the patient in conversation
+doctorName - Doctor's name (denormalized for performance)
+patientName - Patient's name (denormalized for performance)
+createdAt - When conversation was first created
+lastMessageAt - Timestamp of most recent message
+lastMessageContent - Preview of last message
+unreadCountDoctor - Number of unread messages for doctor
+unreadCountPatient - Number of unread messages for patient
+isActive - Boolean for soft deletion
+
+RELATIONSHIP PATTERNS:
+- One conversation per doctor-patient pair
+- Multiple messages per conversation
+- Messages link to users via ID + Type pattern
+- Conversations maintain unread counts for both parties
+
+=============================================================================
+3. API ENDPOINTS & USAGE
+=============================================================================
+
+BASE URL: /v1/healsync/messages
+
+1. SEND MESSAGE
+===============
+Method: POST
+Endpoint: /send
+Request Body:
+{
+  "senderType": "DOCTOR",           // or "PATIENT"
+  "senderId": 1,
+  "receiverType": "PATIENT",        // or "DOCTOR" 
+  "receiverId": 2,
+  "messageContent": "Hello, how are you feeling today?",
+  "messageType": "TEXT",            // TEXT, IMAGE, DOCUMENT, VOICE_NOTE
+  "attachmentUrl": null             // Optional file URL
+}
+
+Response:
+{
+  "messageId": 1,
+  "senderType": "DOCTOR",
+  "receiverType": "PATIENT",
+  "senderId": 1,
+  "receiverId": 2,
+  "senderName": "Dr. John Smith",
+  "receiverName": "John Doe",
+  "messageContent": "Hello, how are you feeling today?",
+  "sentAt": "2025-08-05T10:30:00",
+  "isRead": false,
+  "readAt": null,
+  "messageType": "TEXT",
+  "attachmentUrl": null
+}
+
+2. GET CONVERSATION MESSAGES
+===========================
+Method: GET
+Endpoint: /conversation?doctorId=1&patientId=2
+Response: Array of MessageDto objects (chronological order)
+
+3. GET DOCTOR'S CONVERSATIONS
+============================
+Method: GET
+Endpoint: /doctor/{doctorId}/conversations
+Response: Array of ConversationDto objects with recent messages
+
+4. GET PATIENT'S CONVERSATIONS
+=============================
+Method: GET
+Endpoint: /patient/{patientId}/conversations
+Response: Array of ConversationDto objects with recent messages
+
+5. MARK MESSAGES AS READ
+=======================
+Method: POST
+Endpoint: /mark-read?receiverId=1&receiverType=DOCTOR&senderId=2&senderType=PATIENT
+Response: Success message
+
+6. GET UNREAD MESSAGE COUNT
+==========================
+Method: GET
+Endpoint: /unread-count?userId=1&userType=DOCTOR
+Response: Integer count of unread messages
+
+7. GET UNREAD CONVERSATIONS
+==========================
+Method: GET
+Endpoint: /doctor/{doctorId}/unread-conversations
+Endpoint: /patient/{patientId}/unread-conversations
+Response: Array of ConversationDto objects with unread messages
+
+8. START NEW CONVERSATION
+========================
+Method: POST
+Endpoint: /start-conversation
+Request Body: Same as send message
+Response: MessageDto of first message
+
+=============================================================================
+4. FRONTEND IMPLEMENTATION STRATEGY
+=============================================================================
+
+The frontend should provide intuitive messaging interfaces for both doctors 
+and patients with real-time updates and mobile-responsive design.
+
+ARCHITECTURE COMPONENTS:
+- Conversation list (inbox/chat list)
+- Message thread view (individual conversation)
+- Message composition interface
+- File attachment handling
+- Real-time notifications
+- Search and filtering capabilities
+
+TECHNICAL REQUIREMENTS:
+- WebSocket integration for real-time messaging
+- Local message caching for offline support
+- Push notifications for new messages
+- File upload handling for attachments
+- Responsive design for mobile devices
+- Accessibility compliance
+
+USER EXPERIENCE FLOW:
+1. User sees conversation list with unread counts
+2. User selects conversation to view message thread
+3. User types and sends messages with real-time delivery
+4. Messages appear instantly with delivery/read status
+5. Notifications alert users to new messages
+6. File attachments can be shared and downloaded
+
+=============================================================================
+5. DOCTOR INTERFACE COMPONENTS
+=============================================================================
+
+DOCTOR MESSAGING DASHBOARD:
+==========================
+
+```
+Doctor Messages - Dr. John Smith
+================================
+
+[Conversations] [Unread (3)] [All Patients] [Search: _______________]
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 🔴 John Doe                                    2 mins ago        │
+│    I'm experiencing some chest pain...                           │
+│    Unread: 2 messages                                           │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│ ⚪ Sarah Wilson                               1 hour ago         │
+│    Thank you for the medication advice!                          │
+│    Unread: 0 messages                                           │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 🔴 Mike Johnson                               3 hours ago        │
+│    When should I take my next dose?                              │
+│    Unread: 1 message                                            │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+CONVERSATION VIEW:
+=================
+
+```
+Conversation with John Doe (Patient ID: 123)
+============================================
+
+[Patient Profile] [Treatment History] [📎 Attach File] [🔍 Search]
+
+┌─────────────────────────────────────────────────────────────────┐
+│ John Doe                                        Today, 9:00 AM   │
+│ Good morning doctor, I've been taking the                        │
+│ medication as prescribed but still feeling weak.                 │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│                                            Dr. Smith, 9:15 AM   │
+│ Hello John, thank you for the update.                           │
+│ How many days have you been on the medication?                   │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│ John Doe                                        Today, 9:30 AM   │
+│ It's been 5 days now. Should I continue?                        │
+│ ✓ Read                                                          │
+└─────────────────────────────────────────────────────────────────┘
+
+[Type your message here...                                  ] [Send]
+```
+
+REQUIRED COMPONENTS:
+
+1. **DoctorConversationList**
+   - List of all patient conversations
+   - Unread message indicators
+   - Last message preview
+   - Search and filter capabilities
+   - Sort by recent activity
+
+2. **MessageThread**
+   - Chronological message display
+   - Message status indicators (sent, delivered, read)
+   - Sender identification with timestamps
+   - File attachment display
+   - Message search within conversation
+
+3. **MessageComposer**
+   - Text input with formatting options
+   - File attachment button
+   - Send button with keyboard shortcut support
+   - Character count and message validation
+   - Draft message auto-save
+
+4. **PatientInfoSidebar**
+   - Patient demographics and contact info
+   - Recent appointment history
+   - Current treatment plans
+   - Medical alerts or notes
+
+=============================================================================
+6. PATIENT INTERFACE COMPONENTS
+=============================================================================
+
+PATIENT MESSAGING INTERFACE:
+===========================
+
+```
+My Messages
+===========
+
+[All Doctors] [Unread (1)] [Search: _______________]
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 🔴 Dr. John Smith - Cardiology             10 mins ago          │
+│    Please take your medication with food                         │
+│    Unread: 1 message                                            │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│ ⚪ Dr. Sarah Brown - Neurology              Yesterday            │
+│    Your test results look good!                                  │
+│    Unread: 0 messages                                           │
+└─────────────────────────────────────────────────────────────────┘
+
+[Start New Conversation] [Emergency Contact]
+```
+
+CONVERSATION WITH DOCTOR:
+========================
+
+```
+Dr. John Smith - Cardiology
+============================
+
+[Doctor Profile] [📞 Call] [📅 Book Appointment] [📎 Attach]
+
+┌─────────────────────────────────────────────────────────────────┐
+│                                      Dr. Smith, Today, 2:00 PM  │
+│ Hello John, your latest blood work results are in.              │
+│ Everything looks normal, continue with current medication.       │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│ Me                                           Today, 2:05 PM     │
+│ Thank you doctor! Should I schedule a                           │
+│ follow-up appointment?                                           │
+│ ✓ Read                                                          │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│                                      Dr. Smith, Today, 2:10 PM  │
+│ Yes, please book an appointment for next month.                 │
+│ Take care!                                                       │
+└─────────────────────────────────────────────────────────────────┘
+
+[Type your message here...                                  ] [Send]
+```
+
+REQUIRED COMPONENTS:
+
+1. **PatientConversationList**
+   - List of conversations with doctors
+   - Doctor specialty and contact info
+   - Unread message notifications
+   - Quick action buttons (call, book appointment)
+
+2. **DoctorMessageThread**
+   - Message history with doctor
+   - Integration with appointment booking
+   - Access to doctor's profile information
+   - Emergency contact options
+
+3. **MessageInput**
+   - Simple text input interface
+   - Attachment sharing capabilities
+   - Quick message templates (Yes/No, Thank you, etc.)
+   - Voice message recording (if supported)
+
+4. **StartConversationModal**
+   - Doctor selection interface
+   - Message templates for common inquiries
+   - Appointment request integration
+   - Emergency vs non-emergency classification
+
+=============================================================================
+7. REAL-TIME FEATURES IMPLEMENTATION
+=============================================================================
+
+WEBSOCKET INTEGRATION:
+=====================
+
+Frontend WebSocket Setup:
+```javascript
+// websocket.js
+class MessageWebSocket {
+  constructor(userId, userType) {
+    this.userId = userId;
+    this.userType = userType;
+    this.ws = null;
+    this.messageHandlers = [];
+  }
+
+  connect() {
+    this.ws = new WebSocket(`ws://localhost:8080/messages/${this.userType}/${this.userId}`);
+    
+    this.ws.onopen = () => {
+      console.log('Connected to message service');
+    };
+
+    this.ws.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      this.handleNewMessage(message);
+    };
+
+    this.ws.onclose = () => {
+      console.log('Disconnected from message service');
+      // Implement reconnection logic
+      setTimeout(() => this.connect(), 5000);
+    };
+  }
+
+  sendMessage(messageData) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify(messageData));
+    }
+  }
+
+  handleNewMessage(message) {
+    // Update UI with new message
+    this.messageHandlers.forEach(handler => handler(message));
+  }
+
+  addMessageHandler(handler) {
+    this.messageHandlers.push(handler);
+  }
+}
+```
+
+PUSH NOTIFICATIONS:
+==================
+
+```javascript
+// notifications.js
+class MessageNotifications {
+  constructor() {
+    this.requestPermission();
+  }
+
+  requestPermission() {
+    if ('Notification' in window) {
+      Notification.requestPermission();
+    }
+  }
+
+  showNewMessageNotification(message) {
+    if (Notification.permission === 'granted') {
+      const notification = new Notification(
+        `New message from ${message.senderName}`,
+        {
+          body: message.messageContent.substring(0, 100),
+          icon: '/assets/message-icon.png',
+          tag: `message-${message.messageId}`
+        }
+      );
+
+      notification.onclick = () => {
+        window.focus();
+        // Navigate to conversation
+        window.location.href = `/messages/conversation/${message.senderId}`;
+      };
+    }
+  }
+}
+```
+
+=============================================================================
+8. STEP-BY-STEP IMPLEMENTATION
+=============================================================================
+
+STEP 1: BACKEND SETUP VERIFICATION
+==================================
+
+Ensure all components are created:
+- ✅ Message and Conversation entities
+- ✅ MessageDto, ConversationDto, SendMessageRequestDto
+- ✅ MessageRepository and ConversationRepository  
+- ✅ MessageService with all business logic
+- ✅ MessageController with REST endpoints
+
+Build and test the backend:
+```bash
+./gradlew clean build
+./gradlew bootRun
+```
+
+STEP 2: FRONTEND SETUP
+=====================
+
+Create React components structure:
+```
+src/
+├── components/
+│   ├── messaging/
+│   │   ├── ConversationList.tsx
+│   │   ├── MessageThread.tsx
+│   │   ├── MessageComposer.tsx
+│   │   ├── StartConversation.tsx
+│   │   └── MessageNotifications.tsx
+│   └── shared/
+│       ├── MessageBubble.tsx
+│       ├── FileAttachment.tsx
+│       └── TypingIndicator.tsx
+├── services/
+│   ├── messageService.ts
+│   ├── websocketService.ts
+│   └── notificationService.ts
+├── types/
+│   ├── message.types.ts
+│   └── conversation.types.ts
+└── utils/
+    ├── messageUtils.ts
+    └── dateUtils.ts
+```
+
+STEP 3: API SERVICE IMPLEMENTATION
+==================================
+
+```typescript
+// messageService.ts
+import axios from 'axios';
+
+const API_BASE = '/v1/healsync/messages';
+
+export interface SendMessageRequest {
+  senderType: 'DOCTOR' | 'PATIENT';
+  senderId: number;
+  receiverType: 'DOCTOR' | 'PATIENT';
+  receiverId: number;
+  messageContent: string;
+  messageType?: 'TEXT' | 'IMAGE' | 'DOCUMENT' | 'VOICE_NOTE';
+  attachmentUrl?: string;
+}
+
+export interface MessageDto {
+  messageId: number;
+  senderType: string;
+  receiverType: string;
+  senderId: number;
+  receiverId: number;
+  senderName: string;
+  receiverName: string;
+  messageContent: string;
+  sentAt: string;
+  isRead: boolean;
+  readAt?: string;
+  messageType: string;
+  attachmentUrl?: string;
+}
+
+export interface ConversationDto {
+  conversationId: number;
+  doctorId: number;
+  patientId: number;
+  doctorName: string;
+  patientName: string;
+  createdAt: string;
+  lastMessageAt: string;
+  lastMessageContent: string;
+  unreadCountDoctor: number;
+  unreadCountPatient: number;
+  recentMessages: MessageDto[];
+}
+
+class MessageService {
+  async sendMessage(messageData: SendMessageRequest): Promise<MessageDto> {
+    const response = await axios.post(`${API_BASE}/send`, messageData);
+    return response.data;
+  }
+
+  async getConversationMessages(doctorId: number, patientId: number): Promise<MessageDto[]> {
+    const response = await axios.get(`${API_BASE}/conversation`, {
+      params: { doctorId, patientId }
+    });
+    return response.data;
+  }
+
+  async getDoctorConversations(doctorId: number): Promise<ConversationDto[]> {
+    const response = await axios.get(`${API_BASE}/doctor/${doctorId}/conversations`);
+    return response.data;
+  }
+
+  async getPatientConversations(patientId: number): Promise<ConversationDto[]> {
+    const response = await axios.get(`${API_BASE}/patient/${patientId}/conversations`);
+    return response.data;
+  }
+
+  async markMessagesAsRead(
+    receiverId: number, 
+    receiverType: string, 
+    senderId: number, 
+    senderType: string
+  ): Promise<void> {
+    await axios.post(`${API_BASE}/mark-read`, null, {
+      params: { receiverId, receiverType, senderId, senderType }
+    });
+  }
+
+  async getUnreadMessageCount(userId: number, userType: string): Promise<number> {
+    const response = await axios.get(`${API_BASE}/unread-count`, {
+      params: { userId, userType }
+    });
+    return response.data;
+  }
+
+  async getUnreadConversations(userId: number, userType: string): Promise<ConversationDto[]> {
+    const endpoint = userType === 'DOCTOR' 
+      ? `${API_BASE}/doctor/${userId}/unread-conversations`
+      : `${API_BASE}/patient/${userId}/unread-conversations`;
+    
+    const response = await axios.get(endpoint);
+    return response.data;
+  }
+}
+
+export const messageService = new MessageService();
+```
+
+STEP 4: CONVERSATION LIST COMPONENT
+===================================
+
+```typescript
+// ConversationList.tsx
+import React, { useState, useEffect } from 'react';
+import { ConversationDto } from '../types/message.types';
+import { messageService } from '../services/messageService';
+
+interface ConversationListProps {
+  userId: number;
+  userType: 'DOCTOR' | 'PATIENT';
+  onSelectConversation: (conversation: ConversationDto) => void;
+}
+
+const ConversationList: React.FC<ConversationListProps> = ({
+  userId,
+  userType,
+  onSelectConversation
+}) => {
+  const [conversations, setConversations] = useState<ConversationDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<'all' | 'unread'>('all');
+
+  useEffect(() => {
+    loadConversations();
+  }, [userId, userType, filter]);
+
+  const loadConversations = async () => {
+    try {
+      setLoading(true);
+      let data: ConversationDto[];
+      
+      if (filter === 'unread') {
+        data = await messageService.getUnreadConversations(userId, userType);
+      } else {
+        data = userType === 'DOCTOR' 
+          ? await messageService.getDoctorConversations(userId)
+          : await messageService.getPatientConversations(userId);
+      }
+      
+      setConversations(data);
+    } catch (error) {
+      console.error('Failed to load conversations:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getUnreadCount = (conversation: ConversationDto) => {
+    return userType === 'DOCTOR' 
+      ? conversation.unreadCountDoctor
+      : conversation.unreadCountPatient;
+  };
+
+  const getOtherPartyName = (conversation: ConversationDto) => {
+    return userType === 'DOCTOR' 
+      ? conversation.patientName
+      : conversation.doctorName;
+  };
+
+  const formatLastMessageTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+
+    if (diffInHours < 1) {
+      return `${Math.floor(diffInHours * 60)} mins ago`;
+    } else if (diffInHours < 24) {
+      return `${Math.floor(diffInHours)} hours ago`;
+    } else {
+      return date.toLocaleDateString();
+    }
+  };
+
+  if (loading) {
+    return <div className="loading">Loading conversations...</div>;
+  }
+
+  return (
+    <div className="conversation-list">
+      <div className="conversation-header">
+        <h2>Messages</h2>
+        <div className="filter-buttons">
+          <button 
+            className={filter === 'all' ? 'active' : ''}
+            onClick={() => setFilter('all')}
+          >
+            All
+          </button>
+          <button 
+            className={filter === 'unread' ? 'active' : ''}
+            onClick={() => setFilter('unread')}
+          >
+            Unread
+          </button>
+        </div>
+      </div>
+
+      <div className="conversations">
+        {conversations.length === 0 ? (
+          <div className="no-conversations">
+            {filter === 'unread' ? 'No unread messages' : 'No conversations yet'}
+          </div>
+        ) : (
+          conversations.map((conversation) => {
+            const unreadCount = getUnreadCount(conversation);
+            const otherPartyName = getOtherPartyName(conversation);
+
+            return (
+              <div
+                key={conversation.conversationId}
+                className={`conversation-item ${unreadCount > 0 ? 'unread' : ''}`}
+                onClick={() => onSelectConversation(conversation)}
+              >
+                <div className="conversation-avatar">
+                  {otherPartyName.charAt(0).toUpperCase()}
+                </div>
+                <div className="conversation-content">
+                  <div className="conversation-header">
+                    <h4 className="participant-name">{otherPartyName}</h4>
+                    <span className="last-message-time">
+                      {formatLastMessageTime(conversation.lastMessageAt)}
+                    </span>
+                  </div>
+                  <div className="last-message">
+                    {conversation.lastMessageContent}
+                  </div>
+                  {unreadCount > 0 && (
+                    <div className="unread-badge">{unreadCount}</div>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ConversationList;
+```
+
+STEP 5: MESSAGE THREAD COMPONENT
+================================
+
+```typescript
+// MessageThread.tsx
+import React, { useState, useEffect, useRef } from 'react';
+import { MessageDto, ConversationDto } from '../types/message.types';
+import { messageService } from '../services/messageService';
+import MessageComposer from './MessageComposer';
+
+interface MessageThreadProps {
+  conversation: ConversationDto;
+  currentUserId: number;
+  currentUserType: 'DOCTOR' | 'PATIENT';
+}
+
+const MessageThread: React.FC<MessageThreadProps> = ({
+  conversation,
+  currentUserId,
+  currentUserType
+}) => {
+  const [messages, setMessages] = useState<MessageDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    loadMessages();
+    markMessagesAsRead();
+  }, [conversation]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const loadMessages = async () => {
+    try {
+      setLoading(true);
+      const data = await messageService.getConversationMessages(
+        conversation.doctorId,
+        conversation.patientId
+      );
+      setMessages(data);
+    } catch (error) {
+      console.error('Failed to load messages:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const markMessagesAsRead = async () => {
+    try {
+      const otherUserId = currentUserType === 'DOCTOR' 
+        ? conversation.patientId 
+        : conversation.doctorId;
+      const otherUserType = currentUserType === 'DOCTOR' ? 'PATIENT' : 'DOCTOR';
+
+      await messageService.markMessagesAsRead(
+        currentUserId,
+        currentUserType,
+        otherUserId,
+        otherUserType
+      );
+    } catch (error) {
+      console.error('Failed to mark messages as read:', error);
+    }
+  };
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleNewMessage = (newMessage: MessageDto) => {
+    setMessages(prev => [...prev, newMessage]);
+  };
+
+  const formatMessageTime = (timestamp: string) => {
+    return new Date(timestamp).toLocaleTimeString([], { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  };
+
+  const isMyMessage = (message: MessageDto) => {
+    return message.senderId === currentUserId && message.senderType === currentUserType;
+  };
+
+  if (loading) {
+    return <div className="loading">Loading messages...</div>;
+  }
+
+  const otherPartyName = currentUserType === 'DOCTOR' 
+    ? conversation.patientName 
+    : conversation.doctorName;
+
+  return (
+    <div className="message-thread">
+      <div className="thread-header">
+        <h3>{otherPartyName}</h3>
+        <div className="thread-actions">
+          {currentUserType === 'PATIENT' && (
+            <button className="book-appointment-btn">Book Appointment</button>
+          )}
+          <button className="profile-btn">View Profile</button>
+        </div>
+      </div>
+
+      <div className="messages-container">
+        {messages.map((message) => (
+          <div
+            key={message.messageId}
+            className={`message ${isMyMessage(message) ? 'mine' : 'theirs'}`}
+          >
+            <div className="message-content">
+              <div className="message-text">{message.messageContent}</div>
+              <div className="message-meta">
+                <span className="message-time">
+                  {formatMessageTime(message.sentAt)}
+                </span>
+                {isMyMessage(message) && (
+                  <span className={`read-status ${message.isRead ? 'read' : 'sent'}`}>
+                    {message.isRead ? '✓✓' : '✓'}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
+
+      <MessageComposer
+        conversation={conversation}
+        currentUserId={currentUserId}
+        currentUserType={currentUserType}
+        onMessageSent={handleNewMessage}
+      />
+    </div>
+  );
+};
+
+export default MessageThread;
+```
+
+STEP 6: MESSAGE COMPOSER COMPONENT
+==================================
+
+```typescript
+// MessageComposer.tsx
+import React, { useState } from 'react';
+import { ConversationDto, SendMessageRequest } from '../types/message.types';
+import { messageService } from '../services/messageService';
+
+interface MessageComposerProps {
+  conversation: ConversationDto;
+  currentUserId: number;
+  currentUserType: 'DOCTOR' | 'PATIENT';
+  onMessageSent: (message: any) => void;
+}
+
+const MessageComposer: React.FC<MessageComposerProps> = ({
+  conversation,
+  currentUserId,
+  currentUserType,
+  onMessageSent
+}) => {
+  const [messageText, setMessageText] = useState('');
+  const [sending, setSending] = useState(false);
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!messageText.trim() || sending) return;
+
+    try {
+      setSending(true);
+      
+      const otherUserId = currentUserType === 'DOCTOR' 
+        ? conversation.patientId 
+        : conversation.doctorId;
+      const otherUserType = currentUserType === 'DOCTOR' ? 'PATIENT' : 'DOCTOR';
+
+      const messageData: SendMessageRequest = {
+        senderType: currentUserType,
+        senderId: currentUserId,
+        receiverType: otherUserType,
+        receiverId: otherUserId,
+        messageContent: messageText.trim(),
+        messageType: 'TEXT'
+      };
+
+      const sentMessage = await messageService.sendMessage(messageData);
+      onMessageSent(sentMessage);
+      setMessageText('');
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      alert('Failed to send message. Please try again.');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage(e as any);
+    }
+  };
+
+  return (
+    <div className="message-composer">
+      <form onSubmit={handleSendMessage}>
+        <div className="composer-input">
+          <textarea
+            value={messageText}
+            onChange={(e) => setMessageText(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Type your message..."
+            disabled={sending}
+            rows={1}
+            style={{ resize: 'none' }}
+          />
+          <button 
+            type="submit" 
+            disabled={!messageText.trim() || sending}
+            className="send-button"
+          >
+            {sending ? 'Sending...' : 'Send'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+export default MessageComposer;
+```
+
+=============================================================================
+9. DATA FLOW EXAMPLES
+=============================================================================
+
+SCENARIO 1: PATIENT SENDS MESSAGE TO DOCTOR
+==========================================
+
+1. **Patient Action:**
+   - Patient opens conversation with Dr. Smith
+   - Types message: "I'm experiencing side effects from the medication"
+   - Clicks Send button
+
+2. **Frontend Processing:**
+   - MessageComposer validates input
+   - Creates SendMessageRequest object:
+     ```json
+     {
+       "senderType": "PATIENT",
+       "senderId": 123,
+       "receiverType": "DOCTOR", 
+       "receiverId": 1,
+       "messageContent": "I'm experiencing side effects from the medication",
+       "messageType": "TEXT"
+     }
+     ```
+
+3. **API Call:**
+   - POST /v1/healsync/messages/send
+   - Backend creates Message entity
+   - Updates/creates Conversation entity
+   - Increments unreadCountDoctor
+
+4. **Response:**
+   - Returns MessageDto with messageId and timestamp
+   - Frontend adds message to conversation thread
+   - Message appears with "sent" status (single checkmark)
+
+5. **Real-time Updates:**
+   - WebSocket notifies doctor's client of new message
+   - Doctor sees notification badge and new message
+   - Conversation moves to top of doctor's conversation list
+
+SCENARIO 2: DOCTOR READS AND RESPONDS
+=====================================
+
+1. **Doctor Opens Conversation:**
+   - Doctor clicks on patient conversation
+   - Frontend calls GET /v1/healsync/messages/conversation?doctorId=1&patientId=123
+   - Backend returns all messages in chronological order
+
+2. **Mark as Read:**
+   - Frontend automatically calls mark-read endpoint
+   - POST /v1/healsync/messages/mark-read
+   - Backend updates isRead=true and readAt timestamp
+   - Decrements unreadCountDoctor to 0
+
+3. **Read Receipt:**
+   - WebSocket notifies patient's client
+   - Patient sees message status change to "read" (double checkmark)
+
+4. **Doctor Responds:**
+   - Doctor types: "Please stop taking the medication and schedule an appointment"
+   - Same message sending flow as above
+   - Patient receives real-time notification
+
+SCENARIO 3: CONVERSATION MANAGEMENT
+==================================
+
+1. **Conversation Creation:**
+   - First message between doctor-patient pair
+   - Backend creates new Conversation record
+   - Sets doctorName and patientName for quick access
+   - Initializes unread counts
+
+2. **Conversation Updates:**
+   - Each new message updates lastMessageAt and lastMessageContent
+   - Unread counts increment for the receiver
+   - Conversation sorting maintained by lastMessageAt
+
+3. **Conversation List Display:**
+   - Frontend loads conversations sorted by recent activity
+   - Shows last message preview and unread counts
+   - Real-time updates move conversations to top when new messages arrive
+
+=============================================================================
+10. ERROR HANDLING & VALIDATION
+=============================================================================
+
+FRONTEND VALIDATION:
+===================
+
+**Message Composition:**
+- Message content cannot be empty or only whitespace
+- Maximum message length (e.g., 2000 characters)
+- Validate file attachments (size, type restrictions)
+- Network connectivity checks before sending
+
+**Real-time Error Handling:**
+- WebSocket connection failures with retry logic
+- Failed message delivery with retry options
+- Offline message queuing and sync when online
+- Clear error messages for users
+
+**User Experience:**
+- Loading states during API calls
+- Optimistic UI updates (show messages immediately)
+- Graceful degradation when real-time features fail
+- Clear feedback for all user actions
+
+BACKEND VALIDATION:
+==================
+
+**Message Validation:**
+- Verify sender and receiver exist in database
+- Validate userType is DOCTOR or PATIENT
+- Check message content length and format
+- Validate file attachment URLs if provided
+
+**Security Checks:**
+- Ensure users can only send messages as themselves
+- Verify doctor-patient relationships exist
+- Rate limiting to prevent spam
+- Input sanitization to prevent XSS attacks
+
+**Database Integrity:**
+- Foreign key constraints on user IDs
+- Proper transaction handling for message + conversation updates
+- Soft deletion to preserve message history
+- Backup and recovery procedures
+
+**Error Responses:**
+```
+400 Bad Request: "Message content cannot be empty"
+401 Unauthorized: "Invalid user credentials"
+403 Forbidden: "Not authorized to send messages to this user"
+404 Not Found: "Sender or receiver not found"
+429 Too Many Requests: "Rate limit exceeded"
+500 Internal Server Error: "Message delivery failed"
+```
+
+=============================================================================
+11. TESTING SCENARIOS
+=============================================================================
+
+FRONTEND TESTING:
+================
+
+**Component Testing:**
+- ConversationList renders correctly with mock data
+- MessageThread displays messages in chronological order
+- MessageComposer validates input and handles submission
+- Real-time updates work with WebSocket mocks
+
+**Integration Testing:**
+- Complete message sending flow from UI to API
+- Conversation switching and message loading
+- Unread count updates and notifications
+- Offline/online state transitions
+
+**User Experience Testing:**
+- Mobile responsiveness on various screen sizes
+- Keyboard shortcuts and accessibility features
+- Performance with large message histories
+- Cross-browser compatibility
+
+API TESTING:
+===========
+
+**Message Endpoints:**
+```bash
+# Test successful message sending
+curl -X POST http://localhost:8080/v1/healsync/messages/send \
+  -H "Content-Type: application/json" \
+  -d '{
+    "senderType": "PATIENT",
+    "senderId": 1,
+    "receiverType": "DOCTOR",
+    "receiverId": 1,
+    "messageContent": "Hello doctor",
+    "messageType": "TEXT"
+  }'
+
+# Test conversation retrieval
+curl "http://localhost:8080/v1/healsync/messages/conversation?doctorId=1&patientId=1"
+
+# Test mark as read
+curl -X POST "http://localhost:8080/v1/healsync/messages/mark-read?receiverId=1&receiverType=DOCTOR&senderId=1&senderType=PATIENT"
+```
+
+**Error Scenarios:**
+- Send message with invalid user IDs
+- Send empty message content
+- Mark messages as read with wrong parameters
+- Test rate limiting with rapid requests
+
+SECURITY TESTING:
+=================
+
+**Authentication Testing:**
+- Verify JWT token validation on all endpoints
+- Test message access with wrong user credentials
+- Ensure users cannot read others' conversations
+
+**Input Validation Testing:**
+- SQL injection attempts in message content
+- XSS payload testing in message text
+- File upload security testing
+- Parameter tampering in API calls
+
+=============================================================================
+12. BEST PRACTICES & SECURITY
+=============================================================================
+
+SECURITY BEST PRACTICES:
+========================
+
+**Data Protection:**
+- Encrypt sensitive message content in database
+- Use HTTPS for all API communications
+- Implement proper session management
+- Audit logging for all message activities
+
+**Access Control:**
+- Role-based permissions (doctor vs patient)
+- Verify user relationships before allowing communication
+- Implement message retention policies
+- Secure file attachment handling
+
+**Privacy Compliance:**
+- HIPAA compliance for healthcare data
+- User consent for message storage
+- Right to delete message history
+- Data anonymization for analytics
+
+PERFORMANCE OPTIMIZATION:
+========================
+
+**Backend Performance:**
+- Database indexing on frequently queried fields
+- Message pagination for large conversations
+- Caching for frequently accessed conversations
+- Efficient WebSocket connection management
+
+**Frontend Performance:**
+- Virtual scrolling for long message lists
+- Message lazy loading and caching
+- Optimized re-rendering with React optimization
+- Service worker for offline capabilities
+
+**Scalability:**
+- Horizontal scaling with load balancers
+- Database sharding for large user bases
+- CDN for file attachments
+- Message queue systems for high throughput
+
+MONITORING & ANALYTICS:
+======================
+
+**System Monitoring:**
+- Message delivery success rates
+- WebSocket connection stability
+- API response times and error rates
+- Database performance metrics
+
+**User Analytics:**
+- Message volume and engagement patterns
+- Most active communication pairs
+- Peak usage times and scaling needs
+- User satisfaction and feature usage
+
+=============================================================================
+IMPLEMENTATION CHECKLIST
+=============================================================================
+
+**Backend Development:**
+☐ Message and Conversation entities created
+☐ Repository interfaces implemented with custom queries
+☐ Service layer with business logic completed
+☐ REST controller with all endpoints
+☐ Error handling and validation implemented
+☐ Database migration scripts created
+
+**Frontend Development:**
+☐ Message service API client implemented
+☐ Conversation list component built
+☐ Message thread interface completed
+☐ Message composer with validation
+☐ Real-time WebSocket integration
+☐ Push notification system
+
+**Integration & Testing:**
+☐ End-to-end message flow tested
+☐ Real-time features working correctly
+☐ Mobile responsive design verified
+☐ Cross-browser compatibility checked
+☐ API security testing completed
+☐ Performance optimization implemented
+
+**Security & Compliance:**
+☐ Authentication and authorization working
+☐ Data encryption implemented
+☐ HIPAA compliance measures in place
+☐ Audit logging configured
+☐ Privacy controls implemented
+
+**Production Deployment:**
+☐ Frontend application deployed
+☐ Backend API deployed with database
+☐ WebSocket server configured
+☐ SSL certificates installed
+☐ Monitoring and alerting setup
+☐ User training documentation created
+
+=============================================================================
+
+This comprehensive messaging system provides secure, real-time communication
+between doctors and patients in the HealSync platform. The implementation
+follows healthcare industry standards and provides a professional user
+experience for both parties.
+
+The system is designed to scale and can be extended with additional features
+like group messaging, video calls, and advanced file sharing capabilities.

@@ -1,0 +1,1554 @@
+HEALSYNC PROJECT - COMPREHENSIVE FLOWCHARTS
+===========================================
+
+TABLE OF CONTENTS
+=================
+1. System Architecture Flowchart
+2. Patient Registration & Login Flow
+3. Doctor Authentication Flow
+4. Appointment Booking Flowchart
+5. Treatment Plan Creation Flow
+6. Messaging System Flowchart
+7. Emergency Services Flow
+8. Data Flow Architecture
+9. API Request-Response Flow
+10. Database Entity Relationship Flow
+11. Error Handling Flowchart
+12. Security & Authentication Flow
+13. Notification System Flow
+14. Real-time Communication Flow
+15. Complete User Journey Map
+
+=============================================================================
+1. SYSTEM ARCHITECTURE FLOWCHART
+=============================================================================
+
+                    ┌─────────────────────────────────┐
+                    │         USERS                   │
+                    │                                 │
+                    │  ┌──────────┐  ┌──────────┐     │
+                    │  │ Patients │  │ Doctors  │     │
+                    │  └──────────┘  └──────────┘     │
+                    └─────────────┬───────────────────┘
+                                  │
+                    ┌─────────────▼───────────────────┐
+                    │      FRONTEND LAYER             │
+                    │                                 │
+                    │  ┌─────────────────────────────┐│
+                    │  │     React Application       ││
+                    │  │                             ││
+                    │  │ • Patient Dashboard         ││
+                    │  │ • Doctor Dashboard          ││
+                    │  │ • Appointment Booking       ││
+                    │  │ • Messaging Interface       ││
+                    │  │ • Treatment Management      ││
+                    │  └─────────────────────────────┘│
+                    └─────────────┬───────────────────┘
+                                  │ HTTPS/REST API
+                    ┌─────────────▼───────────────────┐
+                    │       API GATEWAY               │
+                    │                                 │
+                    │  ┌─────────────────────────────┐│
+                    │  │   Load Balancer             ││
+                    │  │   Rate Limiting             ││
+                    │  │   CORS Handling             ││
+                    │  │   Authentication Check      ││
+                    │  └─────────────────────────────┘│
+                    └─────────────┬───────────────────┘
+                                  │
+                    ┌─────────────▼───────────────────┐
+                    │      BACKEND LAYER              │
+                    │                                 │
+                    │  ┌─────────────────────────────┐│
+                    │  │    Spring Boot Application  ││
+                    │  │                             ││
+                    │  │ ┌─────────┐ ┌─────────────┐ ││
+                    │  │ │Control- │ │   Service   │ ││
+                    │  │ │ lers    │ │   Layer     │ ││
+                    │  │ └─────────┘ └─────────────┘ ││
+                    │  │                             ││
+                    │  │ ┌─────────┐ ┌─────────────┐ ││
+                    │  │ │Reposit- │ │   Security  │ ││
+                    │  │ │ ories   │ │   Config    │ ││
+                    │  │ └─────────┘ └─────────────┘ ││
+                    │  └─────────────────────────────┘│
+                    └─────────────┬───────────────────┘
+                                  │ JPA/Hibernate
+                    ┌─────────────▼───────────────────┐
+                    │      DATABASE LAYER             │
+                    │                                 │
+                    │  ┌─────────────────────────────┐│
+                    │  │      MySQL Database         ││
+                    │  │                             ││
+                    │  │ • Patient Records           ││
+                    │  │ • Doctor Profiles           ││
+                    │  │ • Appointments              ││
+                    │  │ • Treatment Plans           ││
+                    │  │ • Messages                  ││
+                    │  │ • Medical Data              ││
+                    │  └─────────────────────────────┘│
+                    └─────────────────────────────────┘
+
+=============================================================================
+2. PATIENT REGISTRATION & LOGIN FLOW
+=============================================================================
+
+START: Patient Opens App
+         │
+         ▼
+    ┌─────────────┐
+    │ Landing     │
+    │ Page        │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐      ┌─────────────┐
+    │ New User?   │ YES  │ Registration│
+    │             │─────▶│ Form        │
+    └─────┬───────┘      └─────┬───────┘
+          │ NO                 │
+          ▼                    ▼
+    ┌─────────────┐      ┌─────────────┐
+    │ Login Form  │      │ Fill Details│
+    │             │      │ • Name      │
+    │ • Email     │      │ • Age       │
+    │ • Password  │      │ • Gender    │
+    └─────┬───────┘      │ • Mobile    │
+          │              │ • Email     │
+          │              │ • Password  │
+          │              └─────┬───────┘
+          │                    │
+          │                    ▼
+          │              ┌─────────────┐
+          │              │ Validate    │
+          │              │ Form Data   │
+          │              └─────┬───────┘
+          │                    │
+          │                    ▼
+          │              ┌─────────────┐    ┌─────────────┐
+          │              │ Email       │NO  │ Show Error  │
+          │              │ Unique?     │───▶│ Message     │
+          │              └─────┬───────┘    └─────────────┘
+          │                    │ YES
+          │                    ▼
+          │              ┌─────────────┐
+          │              │ POST /v1/   │
+          │              │ healsync/   │
+          │              │ patient/add │
+          │              └─────┬───────┘
+          │                    │
+          ▼                    ▼
+    ┌─────────────┐      ┌─────────────┐
+    │ POST /v1/   │      │ Account     │
+    │ healsync/   │      │ Created     │
+    │ patient/    │      │ Successfully│
+    │ login       │      └─────┬───────┘
+    └─────┬───────┘            │
+          │                    │
+          ▼                    │
+    ┌─────────────┐            │
+    │ Validate    │            │
+    │ Credentials │            │
+    └─────┬───────┘            │
+          │                    │
+    ┌─────▼─────┐              │
+    │ Valid?    │              │
+    └─────┬─────┘              │
+          │ YES                │
+          ▼                    │
+    ┌─────────────┐            │
+    │ Return      │            │
+    │ Patient     │◄───────────┘
+    │ Profile     │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Store User  │
+    │ Data in     │
+    │ Local State │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Redirect to │
+    │ Patient     │
+    │ Dashboard   │
+    └─────────────┘
+          │
+          ▼
+        END
+
+=============================================================================
+3. DOCTOR AUTHENTICATION FLOW
+=============================================================================
+
+START: Doctor Access
+         │
+         ▼
+    ┌─────────────┐
+    │ Doctor      │
+    │ Login Page  │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Enter       │
+    │ Credentials │
+    │ • Email     │
+    │ • Password  │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ POST /v1/   │
+    │ healsync/   │
+    │ doctor/     │
+    │ login       │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐      ┌─────────────┐
+    │ Credentials │ NO   │ Show Error  │
+    │ Valid?      │─────▶│ "Invalid    │
+    └─────┬───────┘      │ Credentials"│
+          │ YES          └─────────────┘
+          ▼
+    ┌─────────────┐
+    │ Load Doctor │
+    │ Profile &   │
+    │ Permissions │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Check       │
+    │ Doctor      │
+    │ Status      │
+    └─────┬───────┘
+          │
+    ┌─────▼─────┐
+    │ Active    │
+    │ Doctor?   │
+    └─────┬─────┘
+          │ YES
+          ▼
+    ┌─────────────┐
+    │ Set Session │
+    │ & Auth      │
+    │ Token       │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Load Today's│
+    │ Schedule &  │
+    │ Appointments│
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Doctor      │
+    │ Dashboard   │
+    │ • Schedule  │
+    │ • Patients  │
+    │ • Messages  │
+    │ • Treatments│
+    └─────────────┘
+          │
+          ▼
+        END
+
+=============================================================================
+4. APPOINTMENT BOOKING FLOWCHART
+=============================================================================
+
+START: Patient Wants Appointment
+         │
+         ▼
+    ┌─────────────┐
+    │ Click "Book │
+    │ Appointment"│
+    │ Button      │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Select      │
+    │ Medical     │
+    │ Specialty   │
+    │ • Cardiology│
+    │ • Neurology │
+    │ • General   │
+    │ • etc.      │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Choose      │
+    │ Preferred   │
+    │ Date        │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Select      │
+    │ Time Slot   │
+    │ Preference  │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ POST /v1/   │
+    │ healsync/   │
+    │ book/       │
+    │ appointment │
+    │ ?specialty= │
+    │ &startTime= │
+    │ &patientId= │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Backend:    │
+    │ Find Doctors│
+    │ by Specialty│
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐      ┌─────────────┐
+    │ Doctors     │ NO   │ Return      │
+    │ Available?  │─────▶│ "No doctors │
+    └─────┬───────┘      │ available"  │
+          │ YES          └─────────────┘
+          ▼
+    ┌─────────────┐
+    │ Check Each  │
+    │ Doctor's    │
+    │ Schedule    │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Find First  │
+    │ Available   │
+    │ Doctor in   │
+    │ Time Slot   │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐      ┌─────────────┐
+    │ Slot        │ NO   │ Suggest     │
+    │ Available?  │─────▶│ Alternative │
+    └─────┬───────┘      │ Times       │
+          │ YES          └─────────────┘
+          ▼
+    ┌─────────────┐
+    │ Create      │
+    │ Appointment │
+    │ Record      │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Return      │
+    │ Appointment │
+    │ Details:    │
+    │ • Doctor    │
+    │ • Date/Time │
+    │ • ID        │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Show        │
+    │ Confirmation│
+    │ to Patient  │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Send        │
+    │ Confirmation│
+    │ Email/SMS   │
+    └─────────────┘
+          │
+          ▼
+        END
+
+=============================================================================
+5. TREATMENT PLAN CREATION FLOW
+=============================================================================
+
+START: Doctor Creates Treatment
+         │
+         ▼
+    ┌─────────────┐
+    │ Doctor      │
+    │ Selects     │
+    │ Patient     │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ GET Patient │
+    │ Medical     │
+    │ History     │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Doctor      │
+    │ Reviews     │
+    │ Patient     │
+    │ Condition   │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Select      │
+    │ Disease/    │
+    │ Condition   │
+    │ from        │
+    │ Database    │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Add         │
+    │ Treatment   │
+    │ Notes &     │
+    │ Instructions│
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Search &    │
+    │ Select      │
+    │ Medicines   │
+    │ from DB     │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ For Each    │
+    │ Medicine:   │
+    │ • Dosage    │
+    │ • Timing    │
+    │ • Duration  │
+    │ • Notes     │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Set         │
+    │ Treatment   │
+    │ Duration    │
+    │ (Start/End) │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Review      │
+    │ Complete    │
+    │ Treatment   │
+    │ Plan        │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ POST /api/  │
+    │ patients/   │
+    │ {id}/       │
+    │ treatment-  │
+    │ plans       │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Validate    │
+    │ Treatment   │
+    │ Data        │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐      ┌─────────────┐
+    │ Valid       │ NO   │ Return      │
+    │ Data?       │─────▶│ Validation  │
+    └─────┬───────┘      │ Errors      │
+          │ YES          └─────────────┘
+          ▼
+    ┌─────────────┐
+    │ Save        │
+    │ Treatment   │
+    │ Plan to DB  │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Save Each   │
+    │ Medicine    │
+    │ Record      │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Send        │
+    │ Notification│
+    │ to Patient  │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Return      │
+    │ Treatment   │
+    │ Plan ID &   │
+    │ Details     │
+    └─────────────┘
+          │
+          ▼
+        END
+
+=============================================================================
+6. MESSAGING SYSTEM FLOWCHART
+=============================================================================
+
+START: User Wants to Send Message
+         │
+         ▼
+    ┌─────────────┐
+    │ Open        │
+    │ Messages    │
+    │ Interface   │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐      ┌─────────────┐
+    │ Existing    │ NO   │ Start New   │
+    │ Conversation│─────▶│ Conversation│
+    │ ?           │      └─────┬───────┘
+    └─────┬───────┘            │
+          │ YES                │
+          ▼                    │
+    ┌─────────────┐            │
+    │ Load        │            │
+    │ Conversation│            │
+    │ History     │            │
+    └─────┬───────┘            │
+          │                    │
+          ▼◄───────────────────┘
+    ┌─────────────┐
+    │ Compose     │
+    │ Message     │
+    │ • Text      │
+    │ • Image     │
+    │ • Document  │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Click Send  │
+    │ Button      │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ POST /v1/   │
+    │ healsync/   │
+    │ messages/   │
+    │ send        │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Validate    │
+    │ Message     │
+    │ Data        │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐      ┌─────────────┐
+    │ Valid       │ NO   │ Return      │
+    │ Message?    │─────▶│ Error       │
+    └─────┬───────┘      └─────────────┘
+          │ YES
+          ▼
+    ┌─────────────┐      ┌─────────────┐
+    │ Conversation│ NO   │ Create New  │
+    │ Exists?     │─────▶│ Conversation│
+    └─────┬───────┘      │ Record      │
+          │ YES          └─────┬───────┘
+          ▼                    │
+    ┌─────────────┐            │
+    │ Save        │◄───────────┘
+    │ Message     │
+    │ to Database │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Update      │
+    │ Conversation│
+    │ Last Message│
+    │ & Timestamp │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Increment   │
+    │ Receiver's  │
+    │ Unread      │
+    │ Count       │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Send Real-  │
+    │ time        │
+    │ Notification│
+    │ via WebSocket│
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Return      │
+    │ Message     │
+    │ Details     │
+    │ to Sender   │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Update UI   │
+    │ with New    │
+    │ Message     │
+    └─────────────┘
+          │
+          ▼
+        END
+
+=============================================================================
+7. EMERGENCY SERVICES FLOW
+=============================================================================
+
+START: Emergency Request
+         │
+         ▼
+    ┌─────────────┐
+    │ Patient     │
+    │ Clicks      │
+    │ Emergency   │
+    │ Button      │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Show        │
+    │ Emergency   │
+    │ Options:    │
+    │ • General   │
+    │ • Cardiology│
+    │ • Neurology │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Patient     │
+    │ Selects     │
+    │ Emergency   │
+    │ Type        │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ GET /v1/    │
+    │ healsync/   │
+    │ emergency/  │
+    │ doctors/    │
+    │ {specialty} │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Find All    │
+    │ Available   │
+    │ Emergency   │
+    │ Doctors     │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐      ┌─────────────┐
+    │ Emergency   │ NO   │ Show "No    │
+    │ Doctors     │─────▶│ Emergency   │
+    │ Available?  │      │ Doctors     │
+    └─────┬───────┘      │ Available"  │
+          │ YES          └─────────────┘
+          ▼
+    ┌─────────────┐
+    │ Sort by     │
+    │ • Proximity │
+    │ • Specialty │
+    │ • Rating    │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Show List   │
+    │ of Emergency│
+    │ Doctors     │
+    │ to Patient  │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Patient     │
+    │ Selects     │
+    │ Doctor      │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Initiate    │
+    │ Emergency   │
+    │ Appointment │
+    │ (High       │
+    │ Priority)   │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Send        │
+    │ Emergency   │
+    │ Notification│
+    │ to Doctor   │
+    └─────┬───────┘
+          │
+          ▼
+    ┌─────────────┐
+    │ Return      │
+    │ Emergency   │
+    │ Appointment │
+    │ Details     │
+    └─────────────┘
+          │
+          ▼
+        END
+
+=============================================================================
+8. DATA FLOW ARCHITECTURE
+=============================================================================
+
+FRONTEND → BACKEND → DATABASE FLOW:
+
+┌─────────────┐    HTTP/REST    ┌─────────────┐    JPA/SQL     ┌─────────────┐
+│   REACT     │ ──────────────▶ │  SPRING     │ ─────────────▶ │   MySQL     │
+│ APPLICATION │                 │   BOOT      │                │  DATABASE   │
+│             │                 │             │                │             │
+│ • UI State  │                 │ • Request   │                │ • Tables    │
+│ • User      │                 │   Handling  │                │ • Relations │
+│   Actions   │                 │ • Business  │                │ • Indexes   │
+│ • API Calls │                 │   Logic     │                │ • Triggers  │
+│ • Real-time │                 │ • Data      │                │             │
+│   Updates   │                 │   Transform │                │             │
+└─────────────┘                 └─────────────┘                └─────────────┘
+       ▲                               ▲                               ▲
+       │        Response               │         Result                │
+       │ ◄─────────────────────────────┤ ◄─────────────────────────────┤
+       │                               │                               │
+       ▼                               ▼                               ▼
+
+DATA TRANSFORMATION LAYERS:
+
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│    USER     │───▶│   DTO       │───▶│   ENTITY    │───▶│  DATABASE   │
+│  INTERFACE  │    │(Data Trans- │    │  (JPA       │    │   RECORD    │
+│  OBJECTS    │    │ fer Object) │    │  Entity)    │    │             │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+
+MESSAGING FLOW:
+
+┌─────────────┐ Send Message  ┌─────────────┐ Save to DB   ┌─────────────┐
+│   SENDER    │──────────────▶│  MESSAGE    │─────────────▶│  MESSAGE    │
+│             │               │  SERVICE    │              │  TABLE      │
+└─────────────┘               └─────┬───────┘              └─────────────┘
+                                    │
+                                    ▼ WebSocket
+                              ┌─────────────┐
+                              │  RECEIVER   │
+                              │ (Real-time  │
+                              │ Notification│
+                              └─────────────┘
+
+=============================================================================
+9. API REQUEST-RESPONSE FLOW
+=============================================================================
+
+TYPICAL API REQUEST FLOW:
+
+┌─────────────┐
+│  Frontend   │
+│  Component  │
+└─────┬───────┘
+      │ 1. User Action
+      ▼
+┌─────────────┐
+│   Axios     │
+│  HTTP Call  │
+└─────┬───────┘
+      │ 2. HTTP Request
+      ▼
+┌─────────────┐
+│   CORS      │
+│  Handling   │
+└─────┬───────┘
+      │ 3. Origin Check
+      ▼
+┌─────────────┐
+│ Authentication │
+│   Check     │
+└─────┬───────┘
+      │ 4. Token Validation
+      ▼
+┌─────────────┐
+│ Controller  │
+│  Method     │
+└─────┬───────┘
+      │ 5. Route Handling
+      ▼
+┌─────────────┐
+│ Request     │
+│ Validation  │
+└─────┬───────┘
+      │ 6. Input Validation
+      ▼
+┌─────────────┐
+│  Service    │
+│   Layer     │
+└─────┬───────┘
+      │ 7. Business Logic
+      ▼
+┌─────────────┐
+│ Repository  │
+│   Layer     │
+└─────┬───────┘
+      │ 8. Data Access
+      ▼
+┌─────────────┐
+│  Database   │
+│   Query     │
+└─────┬───────┘
+      │ 9. SQL Execution
+      ▼
+┌─────────────┐
+│  Response   │
+│ Construction│
+└─────┬───────┘
+      │ 10. Data Mapping
+      ▼
+┌─────────────┐
+│   JSON      │
+│  Response   │
+└─────┬───────┘
+      │ 11. HTTP Response
+      ▼
+┌─────────────┐
+│  Frontend   │
+│  Receives   │
+│  Response   │
+└─────────────┘
+
+ERROR HANDLING FLOW:
+
+┌─────────────┐
+│   Error     │
+│  Occurs     │
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐    ┌─────────────┐
+│  Exception  │───▶│   Global    │
+│  Thrown     │    │  Exception  │
+└─────────────┘    │  Handler    │
+                   └─────┬───────┘
+                         │
+                         ▼
+                   ┌─────────────┐
+                   │   Error     │
+                   │  Response   │
+                   │ Construction│
+                   └─────┬───────┘
+                         │
+                         ▼
+                   ┌─────────────┐
+                   │   Return    │
+                   │ Error JSON  │
+                   │ with Status │
+                   │   Code      │
+                   └─────┬───────┘
+                         │
+                         ▼
+                   ┌─────────────┐
+                   │  Frontend   │
+                   │  Handles    │
+                   │   Error     │
+                   └─────────────┘
+
+=============================================================================
+10. DATABASE ENTITY RELATIONSHIP FLOW
+=============================================================================
+
+ENTITY RELATIONSHIPS DIAGRAM:
+
+                    ┌─────────────┐
+                    │   PATIENT   │
+                    │ ─────────── │
+                    │ patientId   │◄──┐
+                    │ patientName │   │
+                    │ email       │   │
+                    │ password    │   │
+                    └─────┬───────┘   │
+                          │           │
+                          │ 1:N       │
+                          ▼           │
+                    ┌─────────────┐   │
+                    │APPOINTMENT  │   │
+                    │ ─────────── │   │
+                    │appointmentId│   │
+                    │ patientId   │───┘
+                    │ doctorId    │───┐
+                    │ date/time   │   │
+                    │ status      │   │
+                    └─────────────┘   │
+                                      │ N:1
+                                      ▼
+                    ┌─────────────┐   │
+                    │   DOCTOR    │◄──┘
+                    │ ─────────── │
+                    │ doctorId    │◄──┐
+                    │ name        │   │
+                    │ specialty   │   │
+                    │ email       │   │
+                    └─────┬───────┘   │
+                          │           │
+                          │ 1:N       │
+                          ▼           │
+                    ┌─────────────┐   │
+                    │ TREATMENT   │   │
+                    │   PLAN      │   │
+                    │ ─────────── │   │
+                    │treatmentId  │   │
+                    │ patientId   │   │
+                    │ doctorId    │───┘
+                    │ diseaseId   │───┐
+                    │ startDate   │   │
+                    │ endDate     │   │
+                    └─────┬───────┘   │
+                          │           │ N:1
+                          │ 1:N       ▼
+                          ▼     ┌─────────────┐
+                    ┌─────────────┐ │  DISEASE    │
+                    │ TREATMENT   │ │ ─────────── │
+                    │  MEDICINE   │ │ diseaseId   │
+                    │ ─────────── │ │ diseaseName │
+                    │treatmentMedID│ │ symptoms    │
+                    │treatmentId  │ │ description │
+                    │medicineName │ └─────────────┘
+                    │ dosage      │
+                    │ timing      │
+                    └─────────────┘
+
+MESSAGING RELATIONSHIPS:
+
+┌─────────────┐         ┌─────────────┐         ┌─────────────┐
+│  PATIENT    │         │CONVERSATION │         │   DOCTOR    │
+│ ─────────── │◄────────│ ─────────── │────────▶│ ─────────── │
+│ patientId   │ 1:N     │conversationId│     N:1 │ doctorId    │
+└─────────────┘         │ patientId   │         └─────────────┘
+                        │ doctorId    │
+                        │lastMessageAt│
+                        │unreadCounts │
+                        └─────┬───────┘
+                              │
+                              │ 1:N
+                              ▼
+                        ┌─────────────┐
+                        │   MESSAGE   │
+                        │ ─────────── │
+                        │ messageId   │
+                        │conversationId│
+                        │ senderType  │
+                        │ senderId    │
+                        │messageContent│
+                        │ sentAt      │
+                        │ isRead      │
+                        └─────────────┘
+
+=============================================================================
+11. ERROR HANDLING FLOWCHART
+=============================================================================
+
+ERROR DETECTION & HANDLING:
+
+┌─────────────┐
+│   Request   │
+│  Received   │
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐    ┌─────────────┐
+│ Validation  │ NO │ Return 400  │
+│   Passes?   │───▶│ Bad Request │
+└─────┬───────┘    │ with Error  │
+      │ YES        │ Details     │
+      ▼            └─────────────┘
+┌─────────────┐
+│ Authentication │    ┌─────────────┐
+│   Valid?    │   NO │ Return 401  │
+└─────┬───────┘ ────▶│ Unauthorized│
+      │ YES          └─────────────┘
+      ▼
+┌─────────────┐
+│ Authorization│    ┌─────────────┐
+│   Valid?    │ NO │ Return 403  │
+└─────┬───────┘───▶│ Forbidden   │
+      │ YES        └─────────────┘
+      ▼
+┌─────────────┐
+│  Execute    │
+│  Business   │
+│   Logic     │
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐    ┌─────────────┐
+│   Business  │ NO │ Return 422  │
+│ Rules Pass? │───▶│ Unprocessable│
+└─────┬───────┘    │ Entity      │
+      │ YES        └─────────────┘
+      ▼
+┌─────────────┐
+│  Database   │
+│  Operation  │
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐    ┌─────────────┐
+│ Operation   │ NO │ Return 500  │
+│ Successful? │───▶│ Internal    │
+└─────┬───────┘    │ Server Error│
+      │ YES        └─────────────┘
+      ▼
+┌─────────────┐
+│ Return 200  │
+│ Success     │
+│ Response    │
+└─────────────┘
+
+EXCEPTION HIERARCHY:
+
+┌─────────────┐
+│  Exception  │
+│   Caught    │
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐    ┌─────────────┐
+│ Validation  │───▶│ Return 400  │
+│ Exception?  │    │ with Field  │
+└─────┬───────┘    │ Errors      │
+      │ NO         └─────────────┘
+      ▼
+┌─────────────┐    ┌─────────────┐
+│ Auth        │───▶│ Return 401  │
+│ Exception?  │    │ Unauthorized│
+└─────┬───────┘    └─────────────┘
+      │ NO
+      ▼
+┌─────────────┐    ┌─────────────┐
+│ Data        │───▶│ Return 409  │
+│ Conflict?   │    │ Conflict    │
+└─────┬───────┘    └─────────────┘
+      │ NO
+      ▼
+┌─────────────┐    ┌─────────────┐
+│ Resource    │───▶│ Return 404  │
+│ Not Found?  │    │ Not Found   │
+└─────┬───────┘    └─────────────┘
+      │ NO
+      ▼
+┌─────────────┐    ┌─────────────┐
+│ System      │───▶│ Return 500  │
+│ Exception?  │    │ Log Error & │
+└─────────────┘    │ Generic Msg │
+                   └─────────────┘
+
+=============================================================================
+12. SECURITY & AUTHENTICATION FLOW
+=============================================================================
+
+SECURITY LAYERS:
+
+┌─────────────┐
+│   HTTPS     │ ← SSL/TLS Encryption
+│ Transport   │
+│  Security   │
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐
+│    CORS     │ ← Cross-Origin Resource Sharing
+│  Validation │
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐
+│   Input     │ ← XSS & Injection Prevention
+│ Sanitization│
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐
+│Authentication│ ← User Identity Verification
+│   Layer     │
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐
+│Authorization│ ← Permission & Role Checking
+│   Layer     │
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐
+│   Data      │ ← Sensitive Data Protection
+│ Protection  │
+└─────────────┘
+
+AUTHENTICATION FLOW:
+
+┌─────────────┐
+│ User Login  │
+│ Attempt     │
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐
+│ Validate    │
+│ Input       │
+│ Format      │
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐
+│ Check       │
+│ Rate        │
+│ Limiting    │
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐      ┌─────────────┐
+│ User        │ NO   │ Return      │
+│ Exists?     │─────▶│ "User Not   │
+└─────┬───────┘      │ Found"      │
+      │ YES          └─────────────┘
+      ▼
+┌─────────────┐
+│ Verify      │
+│ Password    │
+│ Hash        │
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐      ┌─────────────┐
+│ Password    │ NO   │ Increment   │
+│ Valid?      │─────▶│ Failed      │
+└─────┬───────┘      │ Attempts    │
+      │ YES          └─────────────┘
+      ▼
+┌─────────────┐
+│ Generate    │
+│ Session     │
+│ Token       │
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐
+│ Set Session │
+│ Expiration  │
+│ Time        │
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐
+│ Return      │
+│ User Data   │
+│ & Token     │
+└─────────────┘
+
+=============================================================================
+13. NOTIFICATION SYSTEM FLOW
+=============================================================================
+
+NOTIFICATION TRIGGERS:
+
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│ Appointment │    │  Treatment  │    │   Message   │
+│   Booked    │    │ Plan Created│    │  Received   │
+└─────┬───────┘    └─────┬───────┘    └─────┬───────┘
+      │                  │                  │
+      ▼                  ▼                  ▼
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│ Email to    │    │ Email to    │    │ Real-time   │
+│ Patient &   │    │ Patient     │    │ WebSocket   │
+│ Doctor      │    │             │    │ Notification│
+└─────┬───────┘    └─────┬───────┘    └─────┬───────┘
+      │                  │                  │
+      ▼                  ▼                  ▼
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│ SMS         │    │ App Push    │    │ Browser     │
+│ Reminder    │    │ Notification│    │ Notification│
+└─────────────┘    └─────────────┘    └─────────────┘
+
+REAL-TIME NOTIFICATION FLOW:
+
+┌─────────────┐
+│   Event     │
+│  Occurs     │
+│ (Message)   │
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐
+│ Identify    │
+│ Target      │
+│ Users       │
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐      ┌─────────────┐
+│ User        │ YES  │ Send        │
+│ Online?     │─────▶│ WebSocket   │
+└─────┬───────┘      │ Notification│
+      │ NO           └─────────────┘
+      ▼
+┌─────────────┐
+│ Queue       │
+│ Notification│
+│ for Later   │
+│ Delivery    │
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐
+│ Send Email  │
+│ or SMS      │
+│ Notification│
+└─────────────┘
+
+=============================================================================
+14. REAL-TIME COMMUNICATION FLOW
+=============================================================================
+
+WEBSOCKET CONNECTION FLOW:
+
+┌─────────────┐
+│ User Opens  │
+│ Application │
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐
+│ Authenticate│
+│ User        │
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐
+│ Establish   │
+│ WebSocket   │
+│ Connection  │
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐
+│ Register    │
+│ User in     │
+│ Active      │
+│ Sessions    │
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐
+│ Listen for  │
+│ Incoming    │
+│ Messages    │
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐    ┌─────────────┐
+│ Message     │───▶│ Broadcast   │
+│ Received    │    │ to Target   │
+│             │    │ User        │
+└─────────────┘    └─────┬───────┘
+      ▲                  │
+      │                  ▼
+      │            ┌─────────────┐
+      │            │ Update UI   │
+      │            │ in Real-    │
+      │            │ time        │
+      │            └─────────────┘
+      │
+┌─────────────┐
+│ Connection  │
+│ Lost?       │
+│ Reconnect   │
+└─────────────┘
+
+MESSAGE BROADCASTING:
+
+┌─────────────┐
+│ Message     │
+│ Sent by     │
+│ User A      │
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐
+│ Save to     │
+│ Database    │
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐
+│ Identify    │
+│ Recipient   │
+│ (User B)    │
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐      ┌─────────────┐
+│ User B      │ YES  │ Send via    │
+│ Online?     │─────▶│ WebSocket   │
+└─────┬───────┘      └─────────────┘
+      │ NO
+      ▼
+┌─────────────┐
+│ Queue for   │
+│ Next Login  │
+└─────────────┘
+
+=============================================================================
+15. COMPLETE USER JOURNEY MAP
+=============================================================================
+
+PATIENT COMPLETE JOURNEY:
+
+Registration
+     ↓
+┌─────────────┐
+│ Dashboard   │ ← Login Successful
+│ Overview    │
+└─────┬───────┘
+      │
+      ├─────────────┐
+      │             ▼
+      │       ┌─────────────┐
+      │       │ Book        │
+      │       │ Appointment │
+      │       └─────┬───────┘
+      │             │
+      │             ▼
+      │       ┌─────────────┐
+      │       │ Select      │
+      │       │ Specialty   │
+      │       └─────┬───────┘
+      │             │
+      │             ▼
+      │       ┌─────────────┐
+      │       │ Choose      │
+      │       │ Time Slot   │
+      │       └─────┬───────┘
+      │             │
+      │             ▼
+      │       ┌─────────────┐
+      │       │ Confirm     │
+      │       │ Appointment │
+      │       └─────┬───────┘
+      │             │
+      │             ▼
+      │       ┌─────────────┐
+      │       │ Receive     │
+      │       │ Confirmation│
+      │       └─────────────┘
+      │
+      ├─────────────┐
+      │             ▼
+      │       ┌─────────────┐
+      │       │ View        │
+      │       │ Treatment   │
+      │       │ Plans       │
+      │       └─────┬───────┘
+      │             │
+      │             ▼
+      │       ┌─────────────┐
+      │       │ Track       │
+      │       │ Medicine    │
+      │       │ Schedule    │
+      │       └─────┬───────┘
+      │             │
+      │             ▼
+      │       ┌─────────────┐
+      │       │ Set         │
+      │       │ Reminders   │
+      │       └─────────────┘
+      │
+      ├─────────────┐
+      │             ▼
+      │       ┌─────────────┐
+      │       │ Message     │
+      │       │ Doctor      │
+      │       └─────┬───────┘
+      │             │
+      │             ▼
+      │       ┌─────────────┐
+      │       │ Real-time   │
+      │       │ Chat        │
+      │       └─────┬───────┘
+      │             │
+      │             ▼
+      │       ┌─────────────┐
+      │       │ Receive     │
+      │       │ Medical     │
+      │       │ Advice      │
+      │       └─────────────┘
+      │
+      └─────────────┐
+                    ▼
+              ┌─────────────┐
+              │ Emergency   │
+              │ Services    │
+              └─────┬───────┘
+                    │
+                    ▼
+              ┌─────────────┐
+              │ Quick       │
+              │ Doctor      │
+              │ Assignment  │
+              └─────────────┘
+
+DOCTOR COMPLETE JOURNEY:
+
+Login
+  ↓
+┌─────────────┐
+│ Doctor      │
+│ Dashboard   │
+└─────┬───────┘
+      │
+      ├─────────────┐
+      │             ▼
+      │       ┌─────────────┐
+      │       │ View Daily  │
+      │       │ Schedule    │
+      │       └─────┬───────┘
+      │             │
+      │             ▼
+      │       ┌─────────────┐
+      │       │ Patient     │
+      │       │ Appointments│
+      │       └─────┬───────┘
+      │             │
+      │             ▼
+      │       ┌─────────────┐
+      │       │ Conduct     │
+      │       │ Consultation│
+      │       └─────┬───────┘
+      │             │
+      │             ▼
+      │       ┌─────────────┐
+      │       │ Update      │
+      │       │ Patient     │
+      │       │ Records     │
+      │       └─────────────┘
+      │
+      ├─────────────┐
+      │             ▼
+      │       ┌─────────────┐
+      │       │ Create      │
+      │       │ Treatment   │
+      │       │ Plans       │
+      │       └─────┬───────┘
+      │             │
+      │             ▼
+      │       ┌─────────────┐
+      │       │ Prescribe   │
+      │       │ Medicines   │
+      │       └─────┬───────┘
+      │             │
+      │             ▼
+      │       ┌─────────────┐
+      │       │ Set         │
+      │       │ Follow-up   │
+      │       │ Schedule    │
+      │       └─────────────┘
+      │
+      ├─────────────┐
+      │             ▼
+      │       ┌─────────────┐
+      │       │ Respond to  │
+      │       │ Patient     │
+      │       │ Messages    │
+      │       └─────┬───────┘
+      │             │
+      │             ▼
+      │       ┌─────────────┐
+      │       │ Provide     │
+      │       │ Medical     │
+      │       │ Guidance    │
+      │       └─────┬───────┘
+      │             │
+      │             ▼
+      │       ┌─────────────┐
+      │       │ Monitor     │
+      │       │ Patient     │
+      │       │ Progress    │
+      │       └─────────────┘
+      │
+      └─────────────┐
+                    ▼
+              ┌─────────────┐
+              │ Manage      │
+              │ Availability│
+              └─────┬───────┘
+                    │
+                    ▼
+              ┌─────────────┐
+              │ Set         │
+              │ Schedule &  │
+              │ Blocks      │
+              └─────────────┘
+
+=============================================================================
+CONCLUSION
+=============================================================================
+
+These comprehensive flowcharts provide visual representations of all major
+processes within the HealSync system. They illustrate:
+
+1. System Architecture - How different layers interact
+2. User Flows - Step-by-step user journeys
+3. Data Flow - How information moves through the system
+4. API Processes - Request-response patterns
+5. Error Handling - How exceptions are managed
+6. Security - Authentication and authorization flows
+7. Real-time Features - WebSocket communication patterns
+
+These flowcharts serve as:
+- Development references for implementation
+- Documentation for new team members
+- Troubleshooting guides for debugging
+- Communication tools for stakeholders
+- Architecture blueprints for scaling
+
+The visual representations complement the detailed project documentation
+and provide clear understanding of system processes and user interactions.
