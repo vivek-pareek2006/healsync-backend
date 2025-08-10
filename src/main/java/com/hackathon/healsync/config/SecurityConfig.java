@@ -33,7 +33,8 @@ public class SecurityConfig {
             "https://healsync-hs.netlify.app",
             "http://127.0.0.1:3002",
             "http://127.0.0.1:5500",
-            "http://127.0.0.1:3000"
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:5501"
             // Localhost for testing
         ));
         config.setAllowedHeaders(Arrays.asList("*"));
