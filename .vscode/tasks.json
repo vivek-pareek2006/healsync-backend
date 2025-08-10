@@ -25,6 +25,19 @@
 			],
 			"isBackground": false,
 			"group": "build"
+		},
+		{
+			"label": "build",
+			"type": "shell",
+			"command": "./gradlew",
+			"args": [
+				"clean",
+				"build",
+				"-x",
+				"test"
+			],
+			"isBackground": false,
+			"group": "build"
 		}
 	]
 }
