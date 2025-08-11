@@ -2,7 +2,6 @@ package com.hackathon.healsync.service;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 
 import org.springframework.stereotype.Service;
@@ -28,11 +27,7 @@ public class EmailOtpService {
 
     public String startRegistration(String email) {
         String normalized = normalizeEmail(email);
-        // Cooldown 60s
-        var lastWindow = LocalDateTime.now().minusSeconds(60);
-        if (repo.countByEmailAndLastSentAtAfter(normalized, lastWindow) > 0) {
-            return "Please wait before requesting another OTP.";
-        }
+    // Cooldown removed to allow multiple OTP sends back-to-back
         String otp = generateOtp();
         String hash = hashOtp(otp);
         EmailOtp record = new EmailOtp();
@@ -67,22 +62,8 @@ public class EmailOtpService {
 
     public String resend(String email) {
         String normalized = normalizeEmail(email);
-        var recordOpt = repo.findTopByEmailAndPurposeOrderByIdDesc(normalized, "REGISTER");
-        if (recordOpt.isEmpty()) return startRegistration(normalized);
-        var record = recordOpt.get();
-        if (!"PENDING".equals(record.getStatus())) return "Cannot resend for this status.";
-        if (record.getLastSentAt() != null && ChronoUnit.SECONDS.between(record.getLastSentAt(), LocalDateTime.now()) < 60) {
-            return "Please wait before requesting another OTP.";
-        }
-        if (record.getResendCount() >= 5) return "Resend limit reached.";
-        String otp = generateOtp();
-        record.setOtpHash(hashOtp(otp));
-        record.setExpiresAt(LocalDateTime.now().plusMinutes(10));
-        record.setLastSentAt(LocalDateTime.now());
-        record.setResendCount(record.getResendCount() + 1);
-        repo.save(record);
-    sendOtpEmail(normalized, otp);
-        return "OTP resent";
+        // Always generate and send a fresh OTP (no cooldown, no resend cap)
+        return startRegistration(normalized);
     }
 
     private void sendOtpEmail(String to, String otp) { mailer.sendOtpEmail(to, otp); }
