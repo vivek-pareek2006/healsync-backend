@@ -7,5 +7,6 @@ import com.hackathon.healsync.entity.Patient;
 
 @Repository
 public interface PatientRepository extends JpaRepository<Patient, Integer> {
-    Patient findByEmail(String email);
+    boolean existsByEmail(String email);
+    Patient findFirstByEmailOrderByPatientIdDesc(String email);
 }

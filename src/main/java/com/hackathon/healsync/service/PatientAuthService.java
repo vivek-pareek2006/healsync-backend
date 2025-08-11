@@ -18,7 +18,7 @@ public class PatientAuthService {
     }
 
     public PatientDto login(String email, String password) {
-        Patient patient = patientRepository.findByEmail(email);
+    Patient patient = patientRepository.findFirstByEmailOrderByPatientIdDesc(email);
         if (patient != null && passwordEncoder.matches(password, patient.getPassword())) {
             return PatientMapper.toDto(patient);
         }

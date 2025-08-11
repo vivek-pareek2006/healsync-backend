@@ -28,26 +28,61 @@ public class EmailOtpService {
     public String startRegistration(String email) {
         String normalized = normalizeEmail(email);
     // Cooldown removed to allow multiple OTP sends back-to-back
+        return createAndSendOtp(normalized, "REGISTER");
+    }
+
+    public boolean verify(String email, String otp) {
+        String normalized = normalizeEmail(email);
+        return verifyInternal(normalized, otp, "REGISTER");
+    }
+
+    public String resend(String email) {
+        String normalized = normalizeEmail(email);
+        // Always generate and send a fresh OTP (no cooldown, no resend cap)
+        return createAndSendOtp(normalized, "REGISTER");
+    }
+
+    // Password Reset variants
+    public String startPasswordReset(String email) {
+        String normalized = normalizeEmail(email);
+        return createAndSendOtp(normalized, "PASSWORD_RESET");
+    }
+
+    public String resendPasswordReset(String email) {
+        String normalized = normalizeEmail(email);
+        return createAndSendOtp(normalized, "PASSWORD_RESET");
+    }
+
+    public boolean verifyPasswordReset(String email, String otp) {
+        String normalized = normalizeEmail(email);
+        return verifyInternal(normalized, otp, "PASSWORD_RESET");
+    }
+
+    // Consume password reset OTP (works if OTP is PENDING or already VERIFIED)
+    public boolean consumePasswordReset(String email, String otp) {
+        String normalized = normalizeEmail(email);
+        return consumeInternal(normalized, otp, "PASSWORD_RESET");
+    }
+
+    private String createAndSendOtp(String normalizedEmail, String purpose) {
         String otp = generateOtp();
         String hash = hashOtp(otp);
         EmailOtp record = new EmailOtp();
-        record.setEmail(normalized);
+        record.setEmail(normalizedEmail);
         record.setOtpHash(hash);
         record.setExpiresAt(LocalDateTime.now().plusMinutes(10));
         record.setAttempts(0);
         record.setResendCount(0);
         record.setLastSentAt(LocalDateTime.now());
-        record.setPurpose("REGISTER");
+        record.setPurpose(purpose);
         record.setStatus("PENDING");
         repo.save(record);
-
-    sendOtpEmail(normalized, otp);
+        sendOtpEmail(normalizedEmail, otp);
         return "OTP sent";
     }
 
-    public boolean verify(String email, String otp) {
-        String normalized = normalizeEmail(email);
-        var recordOpt = repo.findTopByEmailAndPurposeOrderByIdDesc(normalized, "REGISTER");
+    private boolean verifyInternal(String normalizedEmail, String otp, String purpose) {
+        var recordOpt = repo.findTopByEmailAndPurposeOrderByIdDesc(normalizedEmail, purpose);
         if (recordOpt.isEmpty()) return false;
         var record = recordOpt.get();
         if (!"PENDING".equals(record.getStatus())) return false;
@@ -60,10 +95,19 @@ public class EmailOtpService {
         return false;
     }
 
-    public String resend(String email) {
-        String normalized = normalizeEmail(email);
-        // Always generate and send a fresh OTP (no cooldown, no resend cap)
-        return startRegistration(normalized);
+    private boolean consumeInternal(String normalizedEmail, String otp, String purpose) {
+        var recordOpt = repo.findTopByEmailAndPurposeOrderByIdDesc(normalizedEmail, purpose);
+        if (recordOpt.isEmpty()) return false;
+        var record = recordOpt.get();
+        if (LocalDateTime.now().isAfter(record.getExpiresAt())) { record.setStatus("EXPIRED"); repo.save(record); return false; }
+        // Allow consumption if PENDING or already VERIFIED
+        String st = record.getStatus();
+        if (!"PENDING".equals(st) && !"VERIFIED".equals(st)) return false;
+        boolean ok = verifyHash(otp, record.getOtpHash());
+        if (!ok) return false;
+        record.setStatus("CONSUMED");
+        repo.save(record);
+        return true;
     }
 
     private void sendOtpEmail(String to, String otp) { mailer.sendOtpEmail(to, otp); }
