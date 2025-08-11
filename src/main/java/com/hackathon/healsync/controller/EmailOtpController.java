@@ -1,9 +1,9 @@
 package com.hackathon.healsync.controller;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -32,7 +32,7 @@ public class EmailOtpController {
         return ok ? ResponseEntity.ok("OTP Verified") : ResponseEntity.badRequest().body("Invalid or expired OTP");
     }
 
-    @GetMapping("/resend")
+    @RequestMapping(value = "/resend", method = { RequestMethod.POST, RequestMethod.GET })
     public ResponseEntity<?> resend(@RequestParam("email") String email) {
         String msg = emailOtpService.resend(email);
         return ResponseEntity.ok(msg);
