@@ -29,8 +29,19 @@ public class SmtpOtpMailer implements OtpMailer {
             Object msg = smmClass.getDeclaredConstructor().newInstance();
             smmClass.getMethod("setTo", String[].class).invoke(msg, (Object) new String[]{to});
             smmClass.getMethod("setFrom", String.class).invoke(msg, "healsync.customercare@gmail.com");
-            smmClass.getMethod("setSubject", String.class).invoke(msg, "Your HealSync OTP Code");
-            smmClass.getMethod("setText", String.class).invoke(msg, "Your OTP is: " + otp + "\nValid for 10 minutes. Do not share it.");
+            smmClass.getMethod("setSubject", String.class).invoke(msg, "HealSync Verification Code");
+            String body = new StringBuilder()
+                .append("Hello,\n\n")
+                .append("Your HealSync verification code is: ").append(otp).append("\n\n")
+                .append("This code will expire in 10 minutes.\n\n")
+                .append("For your security:\n")
+                .append("- Do not share this code with anyone.\n")
+                .append("- If you didn’t request this, you can safely ignore this email.\n\n")
+                .append("Thanks,\n")
+                .append("The HealSync Team\n")
+                .append("healsync.customercare@gmail.com")
+                .toString();
+            smmClass.getMethod("setText", String.class).invoke(msg, body);
 
             Class<?> jmsClass = Class.forName("org.springframework.mail.javamail.JavaMailSender");
             Object mailSender = ctx.getBean(jmsClass);

@@ -11,6 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 public class NoopOtpMailer implements OtpMailer {
     @Override
     public void sendOtpEmail(String to, String otp) {
-        log.info("[NOOP MAILER] OTP for {} is {}", to, otp);
+    log.info("[NOOP MAILER] Sending professional OTP email to {} with code {} (expires in 10 minutes)", to, otp);
     }
 }
