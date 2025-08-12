@@ -27,6 +27,8 @@ public class AppointmentStatus {
     private String status;
     @Column(columnDefinition = "TEXT")
     private String doctorNotes;
+    @Column(columnDefinition = "TEXT")
+    private String prescription;
     
     // Explicit getters and setters for IDE compatibility
     public Integer getScheduleId() { return scheduleId; }
@@ -49,4 +51,7 @@ public class AppointmentStatus {
     
     public String getDoctorNotes() { return doctorNotes; }
     public void setDoctorNotes(String doctorNotes) { this.doctorNotes = doctorNotes; }
+    
+    public String getPrescription() { return prescription; }
+    public void setPrescription(String prescription) { this.prescription = prescription; }
 }

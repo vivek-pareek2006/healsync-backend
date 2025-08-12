@@ -1,16 +1,20 @@
 package com.hackathon.healsync.controller;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.hackathon.healsync.dto.AppointmentResponseDto;
+import com.hackathon.healsync.entity.AppointmentStatus;
 import com.hackathon.healsync.service.AppointmentService;
 
 @RestController
@@ -114,5 +118,126 @@ public class AppointmentController {
         boolean ok = appointmentService.addOrUpdateDoctorNotes(appointmentId, doctorId, notes);
         if (!ok) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Appointment not found or doctor not authorized");
         return ResponseEntity.ok("Notes updated.");
+    }
+
+    // Filter appointments with multiple criteria
+    @GetMapping("/filter")
+    public ResponseEntity<List<AppointmentStatus>> filterAppointments(
+        @RequestParam(required = false) Integer patientId,
+        @RequestParam(required = false) Integer doctorId,
+        @RequestParam(required = false) String status,
+        @RequestParam(required = false) String startDate,
+        @RequestParam(required = false) String endDate,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size) {
+        
+        List<AppointmentStatus> appointments = appointmentService.filterAppointments(
+            patientId, doctorId, status, startDate, endDate, page, size);
+        return ResponseEntity.ok(appointments);
+    }
+
+    // Check doctor availability for specific time slot
+    @GetMapping("/check-availability")
+    public ResponseEntity<Map<String, Object>> checkDoctorAvailability(
+        @RequestParam Integer doctorId,
+        @RequestParam String startDateTime,
+        @RequestParam String endDateTime) {
+        
+        Map<String, Object> availability = appointmentService.checkDoctorAvailability(
+            doctorId, startDateTime, endDateTime);
+        return ResponseEntity.ok(availability);
+    }
+
+    // Get available time slots for a specialty on a specific date
+    @GetMapping("/available-slots")
+    public ResponseEntity<List<Map<String, Object>>> getAvailableSlots(
+        @RequestParam String specialty,
+        @RequestParam String date,
+        @RequestParam(defaultValue = "60") int durationMinutes) {
+        
+        List<Map<String, Object>> slots = appointmentService.getAvailableSlots(
+            specialty, date, durationMinutes);
+        return ResponseEntity.ok(slots);
+    }
+
+    // Get upcoming appointments for next N days
+    @GetMapping("/upcoming")
+    public ResponseEntity<List<AppointmentStatus>> getUpcomingAppointments(
+        @RequestParam(required = false) Integer patientId,
+        @RequestParam(required = false) Integer doctorId,
+        @RequestParam(defaultValue = "7") int daysAhead) {
+        
+        List<AppointmentStatus> appointments = appointmentService.getUpcomingAppointments(
+            patientId, doctorId, daysAhead);
+        return ResponseEntity.ok(appointments);
+    }
+
+    // Bulk cancel multiple appointments
+    @PostMapping("/bulk-cancel")
+    public ResponseEntity<Map<String, Object>> bulkCancelAppointments(
+        @RequestBody List<Integer> appointmentIds,
+        @RequestParam Integer requesterId,
+        @RequestParam String requesterRole,
+        @RequestParam(required = false) String reason) {
+        
+        Map<String, Object> result = appointmentService.bulkCancelAppointments(
+            appointmentIds, requesterId, requesterRole, reason);
+        return ResponseEntity.ok(result);
+    }
+
+    // Get appointment statistics and analytics
+    @GetMapping("/statistics")
+    public ResponseEntity<Map<String, Object>> getAppointmentStatistics(
+        @RequestParam(required = false) Integer doctorId,
+        @RequestParam(required = false) String startDate,
+        @RequestParam(required = false) String endDate) {
+        
+        Map<String, Object> stats = appointmentService.getAppointmentStatistics(
+            doctorId, startDate, endDate);
+        return ResponseEntity.ok(stats);
+    }
+
+    // Confirm appointment (doctor confirms the appointment)
+    @PostMapping("/confirm")
+    public ResponseEntity<String> confirmAppointment(
+        @RequestParam Integer appointmentId,
+        @RequestParam Integer doctorId) {
+        
+        boolean success = appointmentService.confirmAppointment(appointmentId, doctorId);
+        if (success) {
+            return ResponseEntity.ok("Appointment confirmed successfully");
+        } else {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Not allowed or appointment not found");
+        }
+    }
+
+    // Mark appointment as completed with notes and prescription
+    @PostMapping("/complete")
+    public ResponseEntity<String> completeAppointment(
+        @RequestParam Integer appointmentId,
+        @RequestParam Integer doctorId,
+        @RequestParam(required = false) String notes,
+        @RequestParam(required = false) String prescription) {
+        
+        boolean success = appointmentService.completeAppointment(appointmentId, doctorId, notes, prescription);
+        if (success) {
+            return ResponseEntity.ok("Appointment completed successfully");
+        } else {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Not allowed or appointment not found");
+        }
+    }
+
+    // Search appointments by patient/doctor name or appointment details
+    @GetMapping("/search")
+    public ResponseEntity<List<AppointmentStatus>> searchAppointments(
+        @RequestParam String query,
+        @RequestParam(required = false) Integer userId,
+        @RequestParam(required = false) String userRole,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size) {
+        
+        List<AppointmentStatus> appointments = appointmentService.searchAppointments(
+            query, userId, userRole, page, size);
+        return ResponseEntity.ok(appointments);
     }
 }
