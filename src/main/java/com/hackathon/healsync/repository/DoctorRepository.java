@@ -10,5 +10,6 @@ import com.hackathon.healsync.entity.Doctor;
 @Repository
 public interface DoctorRepository extends JpaRepository<Doctor, Integer> {
     List<Doctor> findBySpeacialityAndShift(String speaciality, String shift);
+    List<Doctor> findBySpeaciality(String speaciality);
     Doctor findByEmail(String email);
 }

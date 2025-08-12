@@ -65,19 +65,25 @@ public interface AppointmentStatusRepository extends JpaRepository<AppointmentSt
 
     // Search queries
     @Query("SELECT a FROM AppointmentStatus a WHERE a.patientId = :patientId AND " +
-           "(a.doctorNotes LIKE %:query% OR a.status LIKE %:query% OR a.prescription LIKE %:query%)")
+           "(LOWER(a.doctorNotes) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(a.status) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(a.prescription) LIKE LOWER(CONCAT('%', :query, '%')))")
     List<AppointmentStatus> searchPatientAppointments(@Param("patientId") Integer patientId,
                                                      @Param("query") String query,
                                                      Pageable pageable);
 
     @Query("SELECT a FROM AppointmentStatus a WHERE a.doctorId = :doctorId AND " +
-           "(a.doctorNotes LIKE %:query% OR a.status LIKE %:query% OR a.prescription LIKE %:query%)")
+           "(LOWER(a.doctorNotes) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(a.status) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(a.prescription) LIKE LOWER(CONCAT('%', :query, '%')))")
     List<AppointmentStatus> searchDoctorAppointments(@Param("doctorId") Integer doctorId,
                                                     @Param("query") String query,
                                                     Pageable pageable);
 
     @Query("SELECT a FROM AppointmentStatus a WHERE " +
-           "a.doctorNotes LIKE %:query% OR a.status LIKE %:query% OR a.prescription LIKE %:query%")
+           "LOWER(a.doctorNotes) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(a.status) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(a.prescription) LIKE LOWER(CONCAT('%', :query, '%'))")
     List<AppointmentStatus> searchAllAppointments(@Param("query") String query,
                                                  Pageable pageable);
 }
