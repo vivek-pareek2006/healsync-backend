@@ -2,6 +2,7 @@ package com.hackathon.healsync.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -112,5 +113,32 @@ public class TreatmentPlanService {
         dto.setDosage(medicine.getDosage());
         dto.setTiming(medicine.getTiming());
         return dto;
+    }
+
+    /**
+     * Get all treatment plans (for doctor dashboard)
+     */
+    public List<TreatmentPlanResponseDto> getAllTreatmentPlans() {
+        List<TreatmentPlan> allPlans = treatmentPlanRepository.findAll();
+        return allPlans.stream()
+                .map(this::mapToResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get treatment plan by ID
+     */
+    public TreatmentPlanResponseDto getTreatmentPlanById(Integer treatmentId) {
+        Optional<TreatmentPlan> planOpt = treatmentPlanRepository.findById(treatmentId);
+        if (planOpt.isEmpty()) {
+            return null;
+        }
+        
+        TreatmentPlan plan = planOpt.get();
+        // Ensure medicines are loaded
+        List<TreatmentMedicine> medicines = treatmentMedicineRepository.findByTreatmentPlan(plan);
+        plan.setTreatmentMedicines(medicines);
+        
+        return mapToResponseDto(plan);
     }
 }
