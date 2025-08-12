@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.hackathon.healsync.dto.DoctorDto;
 import com.hackathon.healsync.dto.DoctorScheduleDto;
 import com.hackathon.healsync.dto.DoctorBlockDto;
+import com.hackathon.healsync.dto.PatientDto;
 import com.hackathon.healsync.dto.ScheduleRequestDto;
 import com.hackathon.healsync.service.DoctorService;
 import com.hackathon.healsync.service.DoctorScheduleService;
@@ -113,5 +114,21 @@ public class DoctorController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Block not found");
         }
         return ResponseEntity.ok("Block removed successfully");
+    }
+
+    // ==========================================
+    // PATIENT MANAGEMENT APIs
+    // ==========================================
+
+    @GetMapping("/{doctorId}/patients")
+    public ResponseEntity<List<PatientDto>> getDoctorPatients(@PathVariable Integer doctorId) {
+        List<PatientDto> patients = doctorService.getDoctorPatients(doctorId);
+        return ResponseEntity.ok(patients);
+    }
+
+    @GetMapping("/{doctorId}/patients/active")
+    public ResponseEntity<List<PatientDto>> getDoctorActivePatients(@PathVariable Integer doctorId) {
+        List<PatientDto> patients = doctorService.getDoctorActivePatients(doctorId);
+        return ResponseEntity.ok(patients);
     }
 }

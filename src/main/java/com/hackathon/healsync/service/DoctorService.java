@@ -1,23 +1,37 @@
 package com.hackathon.healsync.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.hackathon.healsync.dto.DoctorDto;
+import com.hackathon.healsync.dto.PatientDto;
+import com.hackathon.healsync.entity.AppointmentStatus;
 import com.hackathon.healsync.entity.Doctor;
+import com.hackathon.healsync.entity.Patient;
 import com.hackathon.healsync.mapper.DoctorMapper;
+import com.hackathon.healsync.mapper.PatientMapper;
+import com.hackathon.healsync.repository.AppointmentStatusRepository;
 import com.hackathon.healsync.repository.DoctorRepository;
+import com.hackathon.healsync.repository.PatientRepository;
 
 @Service
 public class DoctorService {
     private final DoctorRepository doctorRepository;
+    private final AppointmentStatusRepository appointmentStatusRepository;
+    private final PatientRepository patientRepository;
 
-    public DoctorService(DoctorRepository doctorRepository) {
+    public DoctorService(DoctorRepository doctorRepository, 
+                        AppointmentStatusRepository appointmentStatusRepository,
+                        PatientRepository patientRepository) {
         this.doctorRepository = doctorRepository;
+        this.appointmentStatusRepository = appointmentStatusRepository;
+        this.patientRepository = patientRepository;
     }
 
     public DoctorDto addDoctor(DoctorDto doctorDto) {
@@ -69,6 +83,62 @@ public class DoctorService {
         return doctorRepository.findAll().stream()
                 .map(DoctorMapper::toDto)
                 .peek(dto -> dto.setPassword(null)) // Hide password in public profile
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get all patients who have appointments with this doctor (all time)
+     */
+    public List<PatientDto> getDoctorPatients(Integer doctorId) {
+        // Get all appointments for this doctor
+        List<AppointmentStatus> appointments = appointmentStatusRepository.findByDoctorIdOrderByStartTimeDesc(doctorId);
+        
+        // Extract unique patient IDs
+        Set<Integer> patientIds = appointments.stream()
+                .map(AppointmentStatus::getPatientId)
+                .collect(Collectors.toSet());
+        
+        // Get patient details for each unique patient ID
+        return patientIds.stream()
+                .map(patientRepository::findById)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .map(PatientMapper::toDto)
+                .peek(dto -> dto.setPassword(null)) // Hide password for privacy
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get patients who have active/upcoming appointments with this doctor
+     */
+    public List<PatientDto> getDoctorActivePatients(Integer doctorId) {
+        LocalDateTime now = LocalDateTime.now();
+        
+        // Get appointments for this doctor that are not completed or cancelled
+        List<AppointmentStatus> activeAppointments = appointmentStatusRepository.findByDoctorIdOrderByStartTimeDesc(doctorId)
+                .stream()
+                .filter(appointment -> {
+                    String status = appointment.getStatus();
+                    boolean isActiveStatus = !status.contains("cancelled") && 
+                                           !status.equals("completed") && 
+                                           !status.equals("no_show");
+                    boolean isFutureOrRecent = appointment.getStartTime().isAfter(now.minusDays(30)); // Recent or future
+                    return isActiveStatus && isFutureOrRecent;
+                })
+                .collect(Collectors.toList());
+        
+        // Extract unique patient IDs from active appointments
+        Set<Integer> activePatientIds = activeAppointments.stream()
+                .map(AppointmentStatus::getPatientId)
+                .collect(Collectors.toSet());
+        
+        // Get patient details for each unique active patient ID
+        return activePatientIds.stream()
+                .map(patientRepository::findById)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .map(PatientMapper::toDto)
+                .peek(dto -> dto.setPassword(null)) // Hide password for privacy
                 .collect(Collectors.toList());
     }
 }
