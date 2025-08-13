@@ -1,4 +1,3 @@
-    // ...existing code...
 package com.hackathon.healsync.service;
 
 import java.time.LocalDate;
@@ -47,9 +46,9 @@ public class AppointmentService {
         return false;
     }
 
-    public Integer findAvailableDoctorId(String speaciality, LocalDateTime startDateTime, LocalDateTime endDateTime) {
+    public Integer findAvailableDoctorId(String specialty, LocalDateTime startDateTime, LocalDateTime endDateTime) {
         DoctorShift requiredShift = DoctorShift.fromTimeRange(startDateTime, endDateTime);
-        List<Doctor> doctors = doctorRepository.findBySpeacialityAndShift(speaciality, requiredShift.name());
+        List<Doctor> doctors = doctorRepository.findBySpecialtyAndShift(specialty, requiredShift.name());
         for (var doctor : doctors) {
             var conflicts = appointmentStatusRepository.findConflictingAppointments(doctor.getDoctorId(), startDateTime, endDateTime);
             if (conflicts == null || conflicts.isEmpty()) {
@@ -59,8 +58,8 @@ public class AppointmentService {
         return null;
     }
 
-    public AppointmentResponseDto bookAppointment(Integer patientId, String speaciality, LocalDateTime startDateTime, LocalDateTime endDateTime) {
-        Integer doctorId = findAvailableDoctorId(speaciality, startDateTime, endDateTime);
+    public AppointmentResponseDto bookAppointment(Integer patientId, String specialty, LocalDateTime startDateTime, LocalDateTime endDateTime) {
+        Integer doctorId = findAvailableDoctorId(specialty, startDateTime, endDateTime);
         if (doctorId == null) {
             return null;
         }
@@ -91,6 +90,52 @@ public class AppointmentService {
         response.setEndTime(endDateTime.toLocalTime());
         response.setStatus(appointment.getStatus());
         return response;
+    }
+
+    public AppointmentResponseDto bookAppointmentWithDoctor(Integer patientId, Integer doctorId, LocalDateTime startDateTime, LocalDateTime endDateTime) {
+        // Check if doctor exists
+        Doctor doctor = doctorRepository.findById(doctorId).orElse(null);
+        if (doctor == null) {
+            return null; // Doctor not found
+        }
+
+        // Check if doctor is available at the requested time
+        if (!isDoctorAvailable(doctorId, startDateTime, endDateTime)) {
+            return null; // Doctor not available
+        }
+
+        // Save appointment record in DB
+        AppointmentStatus appointment = new AppointmentStatus();
+        appointment.setDoctorId(doctorId);
+        appointment.setPatientId(patientId);
+        appointment.setStartTime(startDateTime);
+        appointment.setEndTime(endDateTime);
+        appointment.setStatus("booked");
+        appointmentStatusRepository.save(appointment);
+
+        Patient patient = patientRepository.findById(patientId).orElse(null);
+
+        AppointmentResponseDto response = new AppointmentResponseDto();
+        response.setAppointmentId(appointment.getScheduleId());
+        response.setDoctorId(doctor.getDoctorId());
+        response.setDoctorName(doctor.getName());
+        if (patient != null) {
+            response.setPatientId(patient.getPatientId());
+            response.setPatientName(patient.getPatientName());
+        }
+        response.setDate(startDateTime.toLocalDate());
+        response.setStartTime(startDateTime.toLocalTime());
+        response.setEndTime(endDateTime.toLocalTime());
+        response.setStatus(appointment.getStatus());
+        return response;
+    }
+
+    private boolean isDoctorAvailable(Integer doctorId, LocalDateTime startDateTime, LocalDateTime endDateTime) {
+        // Check for conflicting appointments
+        List<AppointmentStatus> conflictingAppointments = appointmentStatusRepository
+            .findConflictingAppointments(doctorId, startDateTime, endDateTime);
+        
+        return conflictingAppointments.isEmpty();
     }
 
     public List<AppointmentStatus> listAppointmentsForPatient(Integer patientId) {
@@ -206,7 +251,7 @@ public class AppointmentService {
         
         try {
             LocalDate targetDate = LocalDate.parse(date);
-            List<Doctor> doctors = doctorRepository.findBySpeaciality(specialty);
+            List<Doctor> doctors = doctorRepository.findBySpecialty(specialty);
             
             for (Doctor doctor : doctors) {
                 List<Map<String, Object>> doctorSlots = generateDoctorSlots(doctor, targetDate, durationMinutes);

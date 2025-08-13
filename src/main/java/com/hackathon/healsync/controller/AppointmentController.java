@@ -39,14 +39,18 @@ public class AppointmentController {
     }
 
     @PostMapping("/appointment")
-    public ResponseEntity<?> bookAppointment(@RequestParam(value = "speaciality", required = false) String speaciality,
-                                             @RequestParam(value = "specialty", required = false) String specialty,
+    public ResponseEntity<?> bookAppointment(@RequestParam(value = "specialty", required = false) String specialty,
+                                             @RequestParam(value = "doctorId", required = false) Integer doctorId,
                                              @RequestParam("startDateTime") String startDateTime,
                                              @RequestParam("endDateTime") String endDateTime,
                                              @RequestParam("patientId") Integer patientId) {
-        if (speaciality == null || speaciality.isBlank()) {
-            speaciality = specialty; // accept alias
+        
+        // Validate that either specialty or doctorId is provided
+        if ((specialty == null || specialty.isBlank()) && doctorId == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body("Either 'specialty' or 'doctorId' must be provided");
         }
+        
         LocalDateTime start;
         LocalDateTime end;
         try {
@@ -56,10 +60,24 @@ public class AppointmentController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid dateTime format. Use ISO format.");
         }
 
-        AppointmentResponseDto result = appointmentService.bookAppointment(patientId, speaciality, start, end);
-        if (result == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No doctor available for the given speaciality and time range.");
+        AppointmentResponseDto result;
+        
+        if (doctorId != null) {
+            // Book with specific doctor
+            result = appointmentService.bookAppointmentWithDoctor(patientId, doctorId, start, end);
+            if (result == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Doctor not available for the given time slot or doctor not found.");
+            }
+        } else {
+            // Book by specialty (existing logic)
+            result = appointmentService.bookAppointment(patientId, specialty, start, end);
+            if (result == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("No doctor available for the given specialty and time range.");
+            }
         }
+        
         return ResponseEntity.ok(result);
     }
 

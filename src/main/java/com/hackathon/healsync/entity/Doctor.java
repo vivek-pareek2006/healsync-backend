@@ -5,9 +5,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 
 @Entity
 @Data
@@ -36,6 +36,10 @@ public class Doctor {
     
     public String getSpeaciality() { return speaciality; }
     public void setSpeaciality(String speaciality) { this.speaciality = speaciality; }
+    
+    // Alias methods for correct spelling
+    public String getSpecialty() { return speaciality; }
+    public void setSpecialty(String specialty) { this.speaciality = specialty; }
     
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }

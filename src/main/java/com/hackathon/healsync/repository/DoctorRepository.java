@@ -12,4 +12,13 @@ public interface DoctorRepository extends JpaRepository<Doctor, Integer> {
     List<Doctor> findBySpeacialityAndShift(String speaciality, String shift);
     List<Doctor> findBySpeaciality(String speaciality);
     Doctor findByEmail(String email);
+    
+    // Alias methods for correct spelling (Spring Data JPA will map to the actual field)
+    default List<Doctor> findBySpecialtyAndShift(String specialty, String shift) {
+        return findBySpeacialityAndShift(specialty, shift);
+    }
+    
+    default List<Doctor> findBySpecialty(String specialty) {
+        return findBySpeaciality(specialty);
+    }
 }
