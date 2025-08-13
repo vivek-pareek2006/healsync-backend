@@ -11,12 +11,18 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.hackathon.healsync.dto.TreatmentPlanRequestDto;
 import com.hackathon.healsync.dto.TreatmentPlanResponseDto;
+import com.hackathon.healsync.dto.TreatmentPlanListDto;
+import com.hackathon.healsync.dto.TreatmentMedicineDto;
 import com.hackathon.healsync.entity.Medicine;
 import com.hackathon.healsync.entity.Patient;
+import com.hackathon.healsync.entity.Doctor;
+import com.hackathon.healsync.entity.Disease;
 import com.hackathon.healsync.entity.TreatmentMedicine;
 import com.hackathon.healsync.entity.TreatmentPlan;
 import com.hackathon.healsync.repository.MedicineRepository;
 import com.hackathon.healsync.repository.PatientRepository;
+import com.hackathon.healsync.repository.DoctorRepository;
+import com.hackathon.healsync.repository.DiseaseRepository;
 import com.hackathon.healsync.repository.TreatmentMedicineRepository;
 import com.hackathon.healsync.repository.TreatmentPlanRepository;
 
@@ -27,18 +33,24 @@ public class TreatmentPlanService {
     private final TreatmentMedicineRepository treatmentMedicineRepository;
     private final PatientRepository patientRepository;
     private final MedicineRepository medicineRepository;
+    private final DoctorRepository doctorRepository;
+    private final DiseaseRepository diseaseRepository;
 
     @Autowired
     public TreatmentPlanService(
         TreatmentPlanRepository treatmentPlanRepository,
         TreatmentMedicineRepository treatmentMedicineRepository,
         PatientRepository patientRepository,
-        MedicineRepository medicineRepository
+        MedicineRepository medicineRepository,
+        DoctorRepository doctorRepository,
+        DiseaseRepository diseaseRepository
     ) {
         this.treatmentPlanRepository = treatmentPlanRepository;
         this.treatmentMedicineRepository = treatmentMedicineRepository;
         this.patientRepository = patientRepository;
         this.medicineRepository = medicineRepository;
+        this.doctorRepository = doctorRepository;
+        this.diseaseRepository = diseaseRepository;
     }
 
     @Transactional
@@ -140,5 +152,85 @@ public class TreatmentPlanService {
         plan.setTreatmentMedicines(medicines);
         
         return mapToResponseDto(plan);
+    }
+
+    /**
+     * Get all treatment plans created by a specific doctor
+     */
+    public List<TreatmentPlanListDto> getTreatmentPlansByDoctor(Integer doctorId) {
+        List<TreatmentPlan> plans = treatmentPlanRepository.findByDoctorIdOrderByStartDateDesc(doctorId);
+        return plans.stream()
+                .map(this::mapToListDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get all treatment plans for a specific patient with different doctors
+     */
+    public List<TreatmentPlanListDto> getTreatmentPlansByPatient(Integer patientId) {
+        List<TreatmentPlan> plans = treatmentPlanRepository.findByPatientIdWithDoctorInfo(patientId);
+        return plans.stream()
+                .map(this::mapToListDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Map TreatmentPlan to TreatmentPlanListDto with doctor and patient information
+     */
+    private TreatmentPlanListDto mapToListDto(TreatmentPlan plan) {
+        TreatmentPlanListDto dto = new TreatmentPlanListDto();
+        dto.setTreatmentId(plan.getTreatmentId());
+        dto.setDiseaseId(plan.getDiseaseId());
+        dto.setDoctorId(plan.getDoctorId());
+        dto.setPatientId(plan.getPatient().getPatientId());
+        dto.setPatientName(plan.getPatient().getPatientName());
+        dto.setStatus(plan.getStatus());
+        dto.setStartDate(plan.getStartDate());
+        dto.setNotes(plan.getNotes());
+
+        // Get doctor information
+        if (plan.getDoctorId() != null) {
+            Optional<Doctor> doctorOpt = doctorRepository.findById(plan.getDoctorId());
+            if (doctorOpt.isPresent()) {
+                Doctor doctor = doctorOpt.get();
+                dto.setDoctorName(doctor.getName());
+                dto.setDoctorSpecialty(doctor.getSpecialty());
+            }
+        }
+
+        // Get disease information
+        if (plan.getDiseaseId() != null) {
+            Optional<Disease> diseaseOpt = diseaseRepository.findById(plan.getDiseaseId());
+            if (diseaseOpt.isPresent()) {
+                Disease disease = diseaseOpt.get();
+                dto.setDiseaseName(disease.getName());
+            }
+        }
+
+        // Map treatment medicines
+        List<TreatmentMedicineDto> medicineDtos = plan.getTreatmentMedicines().stream()
+                .map(this::mapTreatmentMedicineToDto)
+                .collect(Collectors.toList());
+        dto.setMedicines(medicineDtos);
+
+        return dto;
+    }
+
+    /**
+     * Map TreatmentMedicine to TreatmentMedicineDto
+     */
+    private TreatmentMedicineDto mapTreatmentMedicineToDto(TreatmentMedicine medicine) {
+        TreatmentMedicineDto dto = new TreatmentMedicineDto();
+        dto.setTreatmentMedID(medicine.getTreatmentMedID());
+        dto.setTreatmentID(medicine.getTreatmentID());
+        dto.setDosage(medicine.getDosage());
+        dto.setTiming(medicine.getTiming());
+        dto.setMedicineName(medicine.getMedicineName());
+        dto.setUsageInfo(medicine.getUsageInfo());
+        dto.setSideEffect(medicine.getSideEffect());
+        if (medicine.getTreatmentPlan() != null) {
+            dto.setTreatmentPlanId(medicine.getTreatmentPlan().getTreatmentId());
+        }
+        return dto;
     }
 }
