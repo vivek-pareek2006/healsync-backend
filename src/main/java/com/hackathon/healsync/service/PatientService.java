@@ -25,4 +25,26 @@ public class PatientService {
         try { registrationMailer.sendRegistrationEmail(result); } catch (Exception ignored) {}
         return result;
     }
+
+    public PatientDto updatePatient(Integer patientId, PatientDto patientDto) {
+        Patient patient = patientRepository.findById(patientId)
+            .orElseThrow(() -> new IllegalArgumentException("Patient not found"));
+        // Update fields
+        patient.setPatientName(patientDto.getPatientName());
+        patient.setPatientAge(patientDto.getPatientAge());
+        patient.setGender(patientDto.getGender());
+        patient.setMobileNo(patientDto.getMobileNo());
+        patient.setEmail(patientDto.getEmail());
+        if (patientDto.getPassword() != null && !patientDto.getPassword().isEmpty()) {
+            patient.setPassword(new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode(patientDto.getPassword()));
+        }
+        Patient saved = patientRepository.save(patient);
+        return PatientMapper.toDto(saved);
+    }
+
+    public void deletePatient(Integer patientId) {
+        Patient patient = patientRepository.findById(patientId)
+            .orElseThrow(() -> new IllegalArgumentException("Patient not found"));
+        patientRepository.delete(patient);
+    }
 }
