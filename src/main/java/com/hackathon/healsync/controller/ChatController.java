@@ -14,33 +14,59 @@ public class ChatController {
     @Autowired
     private ChatService chatService;
 
+    // Test endpoint to verify controller is working
+    @GetMapping("/test")
+    public ResponseEntity<String> testEndpoint() {
+        return ResponseEntity.ok("Chat API is working!");
+    }
+
     @PostMapping("/session")
-    public ResponseEntity<ChatSessionDto> createSession(@RequestBody ChatSessionDto dto) {
-        ChatSessionDto session = chatService.createSession(dto.getDoctorId(), dto.getPatientId(), dto.getAppointmentId());
-        return ResponseEntity.ok(session);
+    public ResponseEntity<?> createSession(@RequestBody ChatSessionDto dto) {
+        try {
+            ChatSessionDto session = chatService.createSession(dto.getDoctorId(), dto.getPatientId(), dto.getAppointmentId());
+            return ResponseEntity.ok(session);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error creating chat session: " + e.getMessage());
+        }
     }
 
     @PostMapping("/messages")
-    public ResponseEntity<ChatMessageDto> sendMessage(@RequestBody ChatMessageDto dto) {
-        ChatMessageDto msg = chatService.sendMessage(dto.getChatSessionId(), dto.getSenderId(), dto.getReceiverId(), dto.getMessage());
-        return ResponseEntity.ok(msg);
+    public ResponseEntity<?> sendMessage(@RequestBody ChatMessageDto dto) {
+        try {
+            ChatMessageDto msg = chatService.sendMessage(dto.getChatSessionId(), dto.getSenderId(), dto.getReceiverId(), dto.getMessage());
+            return ResponseEntity.ok(msg);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error sending message: " + e.getMessage());
+        }
     }
 
     @GetMapping("/messages")
-    public ResponseEntity<List<ChatMessageDto>> getChatHistory(@RequestParam Long chatSessionId) {
-        List<ChatMessageDto> history = chatService.getChatHistory(chatSessionId);
-        return ResponseEntity.ok(history);
+    public ResponseEntity<?> getChatHistory(@RequestParam Long chatSessionId) {
+        try {
+            List<ChatMessageDto> history = chatService.getChatHistory(chatSessionId);
+            return ResponseEntity.ok(history);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error getting chat history: " + e.getMessage());
+        }
     }
 
     @GetMapping("/sessions")
-    public ResponseEntity<List<ChatSessionDto>> getSessionsForUser(@RequestParam Integer userId) {
-        List<ChatSessionDto> sessions = chatService.getSessionsForUser(userId);
-        return ResponseEntity.ok(sessions);
+    public ResponseEntity<?> getSessionsForUser(@RequestParam Integer userId) {
+        try {
+            List<ChatSessionDto> sessions = chatService.getSessionsForUser(userId);
+            return ResponseEntity.ok(sessions);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error getting chat sessions: " + e.getMessage());
+        }
     }
 
     @PutMapping("/messages/{messageId}/read")
     public ResponseEntity<?> markMessageAsRead(@PathVariable Long messageId) {
-        chatService.markMessageAsRead(messageId);
-        return ResponseEntity.ok().body("Message marked as read");
+        try {
+            chatService.markMessageAsRead(messageId);
+            return ResponseEntity.ok().body("Message marked as read");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error marking message as read: " + e.getMessage());
+        }
     }
 }
