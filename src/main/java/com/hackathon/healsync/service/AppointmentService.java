@@ -8,12 +8,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.hackathon.healsync.dto.AppointmentResponseDto;
+import com.hackathon.healsync.dto.AppointmentWithDoctorDto;
 import com.hackathon.healsync.entity.AppointmentStatus;
 import com.hackathon.healsync.entity.Doctor;
 import com.hackathon.healsync.entity.Patient;
@@ -142,8 +144,109 @@ public class AppointmentService {
         return appointmentStatusRepository.findByPatientIdOrderByStartTimeDesc(patientId);
     }
 
+    /**
+     * Enhanced method that returns appointments with complete doctor and patient information
+     * This fixes the frontend issue where doctor information is missing from appointments
+     */
+    public List<AppointmentWithDoctorDto> listAppointmentsForPatientWithDoctorInfo(Integer patientId) {
+        List<AppointmentStatus> appointments = appointmentStatusRepository.findByPatientIdOrderByStartTimeDesc(patientId);
+        List<AppointmentWithDoctorDto> enhancedAppointments = new ArrayList<>();
+        
+        for (AppointmentStatus appt : appointments) {
+            // Fetch doctor information
+            Doctor doctor = doctorRepository.findById(appt.getDoctorId()).orElse(null);
+            Patient patient = patientRepository.findById(appt.getPatientId()).orElse(null);
+            
+            AppointmentWithDoctorDto dto = new AppointmentWithDoctorDto();
+            
+            // Set appointment fields
+            dto.setScheduleId(appt.getScheduleId());
+            dto.setId(appt.getScheduleId()); // Fix: Use scheduleId as appointment ID
+            dto.setDoctorId(appt.getDoctorId());
+            dto.setPatientId(appt.getPatientId());
+            dto.setStartTime(appt.getStartTime());
+            dto.setEndTime(appt.getEndTime());
+            dto.setStatus(appt.getStatus());
+            dto.setDoctorNotes(appt.getDoctorNotes());
+            dto.setPrescription(appt.getPrescription());
+            
+            // Set doctor information (fixes missing doctor data)
+            if (doctor != null) {
+                dto.setDoctorName(doctor.getName());
+                dto.setDoctorSpecialty(doctor.getSpeaciality()); // Map to corrected spelling
+                dto.setDoctorEmail(doctor.getEmail());
+                dto.setDoctorMobileNo(doctor.getMobileNo());
+                dto.setDoctorBio(doctor.getBio());
+                dto.setDoctorShift(doctor.getShift());
+            }
+            
+            // Set patient information
+            if (patient != null) {
+                dto.setPatientName(patient.getPatientName());
+                dto.setPatientEmail(patient.getEmail());
+                dto.setPatientMobileNo(patient.getMobileNo());
+                dto.setPatientAge(patient.getPatientAge());
+                dto.setPatientGender(patient.getGender());
+            }
+            
+            enhancedAppointments.add(dto);
+        }
+        
+        return enhancedAppointments;
+    }
+
     public List<AppointmentStatus> listAppointmentsForDoctor(Integer doctorId) {
         return appointmentStatusRepository.findByDoctorIdOrderByStartTimeDesc(doctorId);
+    }
+
+    /**
+     * Enhanced method that returns doctor's appointments with complete doctor and patient information
+     */
+    public List<AppointmentWithDoctorDto> listAppointmentsForDoctorWithPatientInfo(Integer doctorId) {
+        List<AppointmentStatus> appointments = appointmentStatusRepository.findByDoctorIdOrderByStartTimeDesc(doctorId);
+        List<AppointmentWithDoctorDto> enhancedAppointments = new ArrayList<>();
+        
+        for (AppointmentStatus appt : appointments) {
+            // Fetch doctor information
+            Doctor doctor = doctorRepository.findById(appt.getDoctorId()).orElse(null);
+            Patient patient = patientRepository.findById(appt.getPatientId()).orElse(null);
+            
+            AppointmentWithDoctorDto dto = new AppointmentWithDoctorDto();
+            
+            // Set appointment fields
+            dto.setScheduleId(appt.getScheduleId());
+            dto.setId(appt.getScheduleId()); // Fix: Use scheduleId as appointment ID
+            dto.setDoctorId(appt.getDoctorId());
+            dto.setPatientId(appt.getPatientId());
+            dto.setStartTime(appt.getStartTime());
+            dto.setEndTime(appt.getEndTime());
+            dto.setStatus(appt.getStatus());
+            dto.setDoctorNotes(appt.getDoctorNotes());
+            dto.setPrescription(appt.getPrescription());
+            
+            // Set doctor information
+            if (doctor != null) {
+                dto.setDoctorName(doctor.getName());
+                dto.setDoctorSpecialty(doctor.getSpeaciality()); 
+                dto.setDoctorEmail(doctor.getEmail());
+                dto.setDoctorMobileNo(doctor.getMobileNo());
+                dto.setDoctorBio(doctor.getBio());
+                dto.setDoctorShift(doctor.getShift());
+            }
+            
+            // Set patient information
+            if (patient != null) {
+                dto.setPatientName(patient.getPatientName());
+                dto.setPatientEmail(patient.getEmail());
+                dto.setPatientMobileNo(patient.getMobileNo());
+                dto.setPatientAge(patient.getPatientAge());
+                dto.setPatientGender(patient.getGender());
+            }
+            
+            enhancedAppointments.add(dto);
+        }
+        
+        return enhancedAppointments;
     }
 
     public AppointmentStatus getAppointment(Integer appointmentId) {
@@ -421,5 +524,223 @@ public class AppointmentService {
         } else {
             return appointmentStatusRepository.searchAllAppointments(query, pageable);
         }
+    }
+
+    // Get all doctors with their schedules and availability
+    public List<Map<String, Object>> getDoctorsWithSchedules(String specialty, String date, int daysAhead) {
+        List<Map<String, Object>> result = new ArrayList<>();
+        
+        try {
+            List<Doctor> doctors;
+            LocalDate startDate = (date != null) ? LocalDate.parse(date) : LocalDate.now();
+            LocalDate endDate = startDate.plusDays(daysAhead);
+            
+            if (specialty != null && !specialty.trim().isEmpty()) {
+                doctors = doctorRepository.findBySpecialty(specialty);
+            } else {
+                doctors = doctorRepository.findAll();
+            }
+            
+            for (Doctor doctor : doctors) {
+                Map<String, Object> doctorSchedule = new HashMap<>();
+                doctorSchedule.put("doctorId", doctor.getDoctorId());
+                doctorSchedule.put("doctorName", doctor.getName());
+                doctorSchedule.put("specialty", doctor.getSpecialty());
+                doctorSchedule.put("shift", doctor.getShift());
+                
+                // Calculate total appointments for this doctor in the date range
+                List<AppointmentStatus> bookedAppointments = appointmentStatusRepository.findByDoctorIdAndDateRange(
+                    doctor.getDoctorId(), startDate.atStartOfDay(), endDate.atStartOfDay());
+                
+                // Calculate available slots (simplified: assume 8 slots per day)
+                int totalPossibleSlots = daysAhead * 8;
+                int bookedSlots = bookedAppointments.size();
+                int availableSlots = totalPossibleSlots - bookedSlots;
+                
+                doctorSchedule.put("totalSlots", totalPossibleSlots);
+                doctorSchedule.put("bookedSlots", bookedSlots);
+                doctorSchedule.put("availableSlots", Math.max(0, availableSlots));
+                
+                // Find next available slot
+                LocalDateTime nextAvailable = findNextAvailableSlot(doctor.getDoctorId(), startDate);
+                doctorSchedule.put("nextAvailableSlot", nextAvailable);
+                
+                // Generate daily schedule summary
+                List<Map<String, Object>> dailySchedule = new ArrayList<>();
+                LocalDate currentDate = startDate;
+                while (!currentDate.isAfter(endDate)) {
+                    Map<String, Object> daySchedule = new HashMap<>();
+                    daySchedule.put("date", currentDate.toString());
+                    
+                    List<String> availableTimes = getAvailableTimesForDay(doctor.getDoctorId(), currentDate);
+                    daySchedule.put("availableSlots", availableTimes);
+                    
+                    dailySchedule.add(daySchedule);
+                    currentDate = currentDate.plusDays(1);
+                }
+                
+                doctorSchedule.put("schedule", dailySchedule);
+                result.add(doctorSchedule);
+            }
+            
+        } catch (Exception e) {
+            // Log error and return empty list
+        }
+        
+        return result;
+    }
+
+    // Get specific doctor's detailed schedule
+    public Map<String, Object> getDoctorDetailedSchedule(Integer doctorId, String startDate, String endDate, int daysAhead) {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            Doctor doctor = doctorRepository.findById(doctorId).orElse(null);
+            if (doctor == null) {
+                result.put("error", "Doctor not found");
+                return result;
+            }
+            
+            LocalDate start = (startDate != null) ? LocalDate.parse(startDate) : LocalDate.now();
+            LocalDate end = (endDate != null) ? LocalDate.parse(endDate) : start.plusDays(daysAhead);
+            
+            result.put("doctorId", doctor.getDoctorId());
+            result.put("doctorName", doctor.getName());
+            result.put("specialty", doctor.getSpecialty());
+            result.put("shift", doctor.getShift());
+            
+            // Get all appointments in the date range
+            List<AppointmentStatus> appointments = appointmentStatusRepository.findByDoctorIdAndDateRange(
+                doctorId, start.atStartOfDay(), end.atStartOfDay());
+            
+            result.put("totalAppointments", appointments.size());
+            result.put("appointments", appointments);
+            
+            // Generate detailed daily schedule
+            List<Map<String, Object>> detailedSchedule = new ArrayList<>();
+            LocalDate currentDate = start;
+            while (!currentDate.isAfter(end)) {
+                final LocalDate finalCurrentDate = currentDate; // Make variable final for lambda
+                Map<String, Object> dayDetail = new HashMap<>();
+                dayDetail.put("date", finalCurrentDate.toString());
+                
+                // Get appointments for this day
+                List<AppointmentStatus> dayAppointments = appointments.stream()
+                    .filter(apt -> apt.getStartTime().toLocalDate().equals(finalCurrentDate))
+                    .collect(Collectors.toList());
+                
+                dayDetail.put("appointmentsCount", dayAppointments.size());
+                dayDetail.put("appointments", dayAppointments);
+                
+                List<String> availableTimes = getAvailableTimesForDay(doctorId, currentDate);
+                dayDetail.put("availableSlots", availableTimes);
+                dayDetail.put("availableSlotsCount", availableTimes.size());
+                
+                detailedSchedule.add(dayDetail);
+                currentDate = currentDate.plusDays(1);
+            }
+            
+            result.put("detailedSchedule", detailedSchedule);
+            
+        } catch (Exception e) {
+            result.put("error", "Error retrieving doctor schedule: " + e.getMessage());
+        }
+        
+        return result;
+    }
+
+    // Get doctors sorted by availability
+    public List<Map<String, Object>> getDoctorsSortedByAvailability(String specialty, String date) {
+        List<Map<String, Object>> result = new ArrayList<>();
+        
+        try {
+            List<Doctor> doctors;
+            LocalDate targetDate = (date != null) ? LocalDate.parse(date) : LocalDate.now();
+            
+            if (specialty != null && !specialty.trim().isEmpty()) {
+                doctors = doctorRepository.findBySpecialty(specialty);
+            } else {
+                doctors = doctorRepository.findAll();
+            }
+            
+            for (Doctor doctor : doctors) {
+                Map<String, Object> doctorInfo = new HashMap<>();
+                doctorInfo.put("doctorId", doctor.getDoctorId());
+                doctorInfo.put("doctorName", doctor.getName());
+                doctorInfo.put("specialty", doctor.getSpecialty());
+                doctorInfo.put("shift", doctor.getShift());
+                
+                // Count appointments for the target date
+                List<AppointmentStatus> dayAppointments = appointmentStatusRepository.findByDoctorIdAndDate(
+                    doctor.getDoctorId(), targetDate.atStartOfDay(), targetDate.plusDays(1).atStartOfDay());
+                
+                int bookedSlots = dayAppointments.size();
+                int availableSlots = 8 - bookedSlots; // Assume 8 slots per day
+                
+                doctorInfo.put("bookedSlots", bookedSlots);
+                doctorInfo.put("availableSlots", Math.max(0, availableSlots));
+                doctorInfo.put("availabilityPercentage", 
+                    availableSlots > 0 ? (availableSlots * 100.0 / 8) : 0);
+                
+                // Get next available slot for this doctor
+                LocalDateTime nextAvailable = findNextAvailableSlot(doctor.getDoctorId(), targetDate);
+                doctorInfo.put("nextAvailableSlot", nextAvailable);
+                
+                result.add(doctorInfo);
+            }
+            
+            // Sort by availability (most available first)
+            result.sort((a, b) -> Integer.compare(
+                (Integer) b.get("availableSlots"), 
+                (Integer) a.get("availableSlots")));
+                
+        } catch (Exception e) {
+            // Log error and return empty list
+        }
+        
+        return result;
+    }
+
+    // Helper method to find next available slot for a doctor
+    private LocalDateTime findNextAvailableSlot(Integer doctorId, LocalDate fromDate) {
+        LocalDate currentDate = fromDate;
+        LocalDate maxDate = fromDate.plusDays(30); // Search up to 30 days ahead
+        
+        while (!currentDate.isAfter(maxDate)) {
+            List<String> availableTimes = getAvailableTimesForDay(doctorId, currentDate);
+            if (!availableTimes.isEmpty()) {
+                // Return first available time of the day
+                return currentDate.atTime(LocalTime.parse(availableTimes.get(0)));
+            }
+            currentDate = currentDate.plusDays(1);
+        }
+        
+        return null; // No available slot found in next 30 days
+    }
+
+    // Helper method to get available times for a specific day
+    private List<String> getAvailableTimesForDay(Integer doctorId, LocalDate date) {
+        List<String> availableTimes = new ArrayList<>();
+        
+        // Define working hours (9 AM to 5 PM with 1-hour slots)
+        LocalTime[] timeSlots = {
+            LocalTime.of(9, 0), LocalTime.of(10, 0), LocalTime.of(11, 0), LocalTime.of(12, 0),
+            LocalTime.of(14, 0), LocalTime.of(15, 0), LocalTime.of(16, 0), LocalTime.of(17, 0)
+        };
+        
+        for (LocalTime timeSlot : timeSlots) {
+            LocalDateTime startTime = date.atTime(timeSlot);
+            LocalDateTime endTime = startTime.plusHours(1);
+            
+            // Check if this time slot is available
+            List<AppointmentStatus> conflicts = appointmentStatusRepository.findConflictingAppointments(
+                doctorId, startTime, endTime);
+            
+            if (conflicts.isEmpty()) {
+                availableTimes.add(timeSlot.toString());
+            }
+        }
+        
+        return availableTimes;
     }
 }

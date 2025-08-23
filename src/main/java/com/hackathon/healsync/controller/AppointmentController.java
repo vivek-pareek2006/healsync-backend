@@ -81,16 +81,18 @@ public class AppointmentController {
         return ResponseEntity.ok(result);
     }
 
-    // List appointments for a patient
+    // List appointments for a patient - ENHANCED with complete doctor information
     @GetMapping("/patient/appointments")
     public ResponseEntity<?> listPatientAppointments(@RequestParam("patientId") Integer patientId) {
-        return ResponseEntity.ok(appointmentService.listAppointmentsForPatient(patientId));
+        // Use enhanced method that includes doctor information to fix frontend issues
+        return ResponseEntity.ok(appointmentService.listAppointmentsForPatientWithDoctorInfo(patientId));
     }
 
-    // List appointments for a doctor
+    // List appointments for a doctor - ENHANCED with complete patient information
     @GetMapping("/doctor/appointments")
     public ResponseEntity<?> listDoctorAppointments(@RequestParam("doctorId") Integer doctorId) {
-        return ResponseEntity.ok(appointmentService.listAppointmentsForDoctor(doctorId));
+        // Use enhanced method that includes patient information
+        return ResponseEntity.ok(appointmentService.listAppointmentsForDoctorWithPatientInfo(doctorId));
     }
 
     // Get single appointment
@@ -257,5 +259,41 @@ public class AppointmentController {
         List<AppointmentStatus> appointments = appointmentService.searchAppointments(
             query, userId, userRole, page, size);
         return ResponseEntity.ok(appointments);
+    }
+
+    // Get all doctors with their schedules and availability
+    @GetMapping("/doctors/schedules")
+    public ResponseEntity<List<Map<String, Object>>> getDoctorsWithSchedules(
+        @RequestParam(required = false) String specialty,
+        @RequestParam(required = false) String date,
+        @RequestParam(defaultValue = "7") int daysAhead) {
+        
+        List<Map<String, Object>> doctorsWithSchedules = appointmentService.getDoctorsWithSchedules(
+            specialty, date, daysAhead);
+        return ResponseEntity.ok(doctorsWithSchedules);
+    }
+
+    // Get specific doctor's detailed schedule
+    @GetMapping("/doctor/schedule")
+    public ResponseEntity<Map<String, Object>> getDoctorSchedule(
+        @RequestParam Integer doctorId,
+        @RequestParam(required = false) String startDate,
+        @RequestParam(required = false) String endDate,
+        @RequestParam(defaultValue = "7") int daysAhead) {
+        
+        Map<String, Object> schedule = appointmentService.getDoctorDetailedSchedule(
+            doctorId, startDate, endDate, daysAhead);
+        return ResponseEntity.ok(schedule);
+    }
+
+    // Get doctors sorted by availability (least booked first)
+    @GetMapping("/doctors/by-availability")
+    public ResponseEntity<List<Map<String, Object>>> getDoctorsByAvailability(
+        @RequestParam(required = false) String specialty,
+        @RequestParam(required = false) String date) {
+        
+        List<Map<String, Object>> doctors = appointmentService.getDoctorsSortedByAvailability(
+            specialty, date);
+        return ResponseEntity.ok(doctors);
     }
 }

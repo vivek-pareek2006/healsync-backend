@@ -86,4 +86,10 @@ public interface AppointmentStatusRepository extends JpaRepository<AppointmentSt
            "LOWER(a.prescription) LIKE LOWER(CONCAT('%', :query, '%'))")
     List<AppointmentStatus> searchAllAppointments(@Param("query") String query,
                                                  Pageable pageable);
+
+    // Find appointments by doctor ID for a specific date (day)
+    @Query("SELECT a FROM AppointmentStatus a WHERE a.doctorId = :doctorId AND a.startTime >= :startOfDay AND a.startTime < :endOfDay")
+    List<AppointmentStatus> findByDoctorIdAndDate(@Param("doctorId") Integer doctorId,
+                                                 @Param("startOfDay") LocalDateTime startOfDay,
+                                                 @Param("endOfDay") LocalDateTime endOfDay);
 }
